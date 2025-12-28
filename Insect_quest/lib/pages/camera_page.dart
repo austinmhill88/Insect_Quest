@@ -10,6 +10,7 @@ import '../config/feature_flags.dart';
 import '../models/capture.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
+import '../services/settings_service.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -23,13 +24,20 @@ class _CameraPageState extends State<CameraPage> {
   CameraController? controller;
   List<CameraDescription>? cameras;
   bool ready = false;
-  final ml = MLService();
+  late final MLService ml;
   bool kidsMode = Flags.kidsModeDefault;
 
   @override
   void initState() {
     super.initState();
+    ml = MLService(catalogService: widget.catalogService);
     _init();
+    _loadKidsMode();
+  }
+
+  Future<void> _loadKidsMode() async {
+    final km = await SettingsService.getKidsMode();
+    setState(() => kidsMode = km);
   }
 
   Future<void> _init() async {
@@ -128,6 +136,32 @@ class _CameraPageState extends State<CameraPage> {
       kidsMode: kidsMode,
     );
 
+    // Task 10: Retake prompt for low-quality shots
+    if (sharpness < 0.9 || framing < 0.9) {
+      if (mounted) {
+        final retake = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Low Quality Photo"),
+            content: const Text("The photo quality is low. Would you like to retake it?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text("Keep anyway"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text("Retake"),
+              ),
+            ],
+          ),
+        );
+        if (retake == true) {
+          return; // Exit without saving
+        }
+      }
+    }
+
     // Location
     final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
     final lat = pos.latitude;
@@ -194,15 +228,41 @@ class _CameraPageState extends State<CameraPage> {
     }
 
     // Georgia State Species Legendary override handling
+    // Task 9: Legendary species get Legendary badge but Epic points if quality < 1.00
     final isStateSpecies = flags["state_species"] == true;
     final qualifiesLegendaryQuality = qMult >= 1.00;
+    String pointsTier = tier; // tier used for points calculation
+    
     if (isStateSpecies && tier == "Legendary" && !qualifiesLegendaryQuality) {
       // Award Epic points but maintain Legendary badge
-      tier = "Legendary"; // badge remains
+      pointsTier = "Epic"; // use Epic tier for points
+      // tier stays "Legendary" for badge display
+    }
+
+    // Task 9: Kids Mode - Show safety tips banner for spiders
+    if (kidsMode && group.contains("Spider")) {
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("🛡️ Safety Tip"),
+            content: const Text(
+              "Great find! Remember to observe spiders from a safe distance. "
+              "Never touch spiders with your bare hands. Some spiders can bite if they feel threatened."
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Got it!"),
+              ),
+            ],
+          ),
+        );
+      }
     }
 
     final pts = Scoring.points(
-      tier: tier,
+      tier: pointsTier,
       qualityMult: qMult,
       speciesConfirmed: speciesConfirmed,
       firstGenus: false, // MVP: no novelty tracking
@@ -252,7 +312,10 @@ class _CameraPageState extends State<CameraPage> {
                 FilterChip(
                   label: const Text("Kids Mode"),
                   selected: kidsMode,
-                  onSelected: (v) => setState(() => kidsMode = v),
+                  onSelected: (v) async {
+                    await SettingsService.setKidsMode(v);
+                    setState(() => kidsMode = v);
+                  },
                 ),
                 FloatingActionButton.extended(
                   icon: const Icon(Icons.camera),

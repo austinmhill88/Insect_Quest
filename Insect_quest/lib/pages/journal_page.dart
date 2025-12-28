@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/capture.dart';
+import '../services/settings_service.dart';
 
 class JournalPage extends StatefulWidget {
   const JournalPage({super.key});
@@ -28,6 +30,7 @@ class JournalPage extends StatefulWidget {
 
 class _JournalPageState extends State<JournalPage> {
   List<Capture> captures = [];
+  bool kidsMode = false;
 
   @override
   void initState() {
@@ -37,13 +40,29 @@ class _JournalPageState extends State<JournalPage> {
 
   Future<void> _refresh() async {
     captures = await JournalPage.loadCaptures();
+    kidsMode = await SettingsService.getKidsMode();
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Journal')),
+      appBar: AppBar(
+        title: const Text('Journal'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: FilterChip(
+              label: const Text("Kids Mode"),
+              selected: kidsMode,
+              onSelected: (v) async {
+                await SettingsService.setKidsMode(v);
+                await _refresh();
+              },
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView.builder(
