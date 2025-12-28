@@ -30,7 +30,12 @@ class MLService {
         
         // Extract genus from species if not explicitly provided
         if (genus.isEmpty && species != null && species.isNotEmpty) {
-          genus = species.split(" ")[0];
+          final parts = species.trim().split(" ");
+          if (parts.isNotEmpty && parts[0].isNotEmpty) {
+            genus = parts[0];
+          } else {
+            genus = "Unknown";
+          }
         }
         
         final isLepidoptera = chosen["group"] == "Butterflies";
