@@ -240,7 +240,7 @@ class _CameraPageState extends State<CameraPage> {
     }
 
     // Task 9: Kids Mode - Show safety tips banner for spiders
-    if (kidsMode && group.contains("Spider")) {
+    if (kidsMode && (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider"))) {
       if (mounted) {
         await showDialog(
           context: context,

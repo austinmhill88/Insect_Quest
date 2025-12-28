@@ -25,8 +25,14 @@ class MLService {
         // Pick a state species to suggest
         final chosen = stateSpecies[rnd.nextInt(stateSpecies.length)];
         final entry = chosen["entry"];
-        final genus = entry["genus"] ?? entry["species"]?.split(" ")[0] ?? "Unknown";
         final species = entry["species"];
+        String genus = entry["genus"] ?? "";
+        
+        // Extract genus from species if not explicitly provided
+        if (genus.isEmpty && species != null && species.isNotEmpty) {
+          genus = species.split(" ")[0];
+        }
+        
         final isLepidoptera = chosen["group"] == "Butterflies";
         
         return {

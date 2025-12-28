@@ -30,8 +30,8 @@ class CatalogService {
         // Check genus from species field (first word of species name)
         final species = entry["species"] ?? "";
         if (species.isNotEmpty) {
-          final genusFromSpecies = species.split(" ")[0];
-          if (genusFromSpecies == genus) {
+          final parts = species.split(" ");
+          if (parts.isNotEmpty && parts[0] == genus) {
             return {"group": group["group"], "entry": entry};
           }
         }

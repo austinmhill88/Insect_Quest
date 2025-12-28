@@ -23,7 +23,8 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _init() async {
-    kidsMode = await SettingsService.getKidsMode();
+    final km = await SettingsService.getKidsMode();
+    setState(() => kidsMode = km);
     await _loadMarkers();
   }
 
