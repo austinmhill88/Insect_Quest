@@ -23,8 +23,20 @@ class CatalogService {
   Map<String, dynamic>? findByGenus(String genus) {
     for (final group in catalog["groups"]) {
       for (final entry in group["entries"]) {
+        // Check explicit genus field
         if ((entry["genus"] ?? "") == genus) {
           return {"group": group["group"], "entry": entry};
+        }
+        // Check genus from species field (first word of species name)
+        final species = entry["species"];
+        if (species != null && species.isNotEmpty) {
+          final trimmed = species.trim();
+          if (trimmed.isNotEmpty) {
+            final parts = trimmed.split(" ");
+            if (parts.isNotEmpty && parts[0].isNotEmpty && parts[0] == genus) {
+              return {"group": group["group"], "entry": entry};
+            }
+          }
         }
       }
     }
