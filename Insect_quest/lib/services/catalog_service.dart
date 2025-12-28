@@ -28,11 +28,14 @@ class CatalogService {
           return {"group": group["group"], "entry": entry};
         }
         // Check genus from species field (first word of species name)
-        final species = entry["species"] ?? "";
-        if (species.isNotEmpty) {
-          final parts = species.trim().split(" ");
-          if (parts.isNotEmpty && parts[0].isNotEmpty && parts[0] == genus) {
-            return {"group": group["group"], "entry": entry};
+        final species = entry["species"];
+        if (species != null && species.isNotEmpty) {
+          final trimmed = species.trim();
+          if (trimmed.isNotEmpty) {
+            final parts = trimmed.split(" ");
+            if (parts.isNotEmpty && parts[0].isNotEmpty && parts[0] == genus) {
+              return {"group": group["group"], "entry": entry};
+            }
           }
         }
       }

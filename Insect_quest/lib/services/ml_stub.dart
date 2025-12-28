@@ -30,9 +30,14 @@ class MLService {
         
         // Extract genus from species if not explicitly provided
         if (genus.isEmpty && species != null && species.isNotEmpty) {
-          final parts = species.trim().split(" ");
-          if (parts.isNotEmpty && parts[0].isNotEmpty) {
-            genus = parts[0];
+          final trimmed = species.trim();
+          if (trimmed.isNotEmpty) {
+            final parts = trimmed.split(" ");
+            if (parts.isNotEmpty && parts[0].isNotEmpty) {
+              genus = parts[0];
+            } else {
+              genus = "Unknown";
+            }
           } else {
             genus = "Unknown";
           }
