@@ -1,0 +1,57 @@
+{
+  "region": "North Georgia (MVP)",
+  "version": "android-mvp-0.1",
+  "groups": [
+    {
+      "group": "Butterflies",
+      "mode": "species-preferred",
+      "entries": [
+        { "species": "Papilio glaucus", "common": "Eastern Tiger Swallowtail", "tier": "Legendary", "flags": { "state_species": true, "distinctive": true } },
+        { "species": "Papilio troilus", "common": "Spicebush Swallowtail", "tier": "Uncommon" },
+        { "species": "Danaus plexippus", "common": "Monarch", "tier": "Uncommon" },
+        { "species": "Pieris rapae", "common": "Cabbage White", "tier": "Common" }
+      ]
+    },
+    {
+      "group": "Bees/Wasps",
+      "mode": "genus-first",
+      "entries": [
+        { "species": "Apis mellifera", "common": "Honey Bee", "tier": "Legendary", "flags": { "state_species": true } },
+        { "genus": "Bombus", "common": "Bumblebees", "tier": "Uncommon" },
+        { "genus": "Polistes", "common": "Paper Wasps", "tier": "Uncommon" }
+      ]
+    },
+    {
+      "group": "Beetles",
+      "mode": "genus-first",
+      "entries": [
+        { "species": "Dynastes tityus", "common": "Eastern Hercules Beetle", "tier": "Legendary" },
+        { "species": "Harmonia axyridis", "common": "Asian Lady Beetle", "tier": "Common", "flags": { "invasive": true } }
+      ]
+    },
+    {
+      "group": "Arachnids – Spiders",
+      "mode": "genus-first",
+      "entries": [
+        { "species": "Phidippus audax", "common": "Bold Jumping Spider", "tier": "Common" },
+        { "species": "Argiope aurantia", "common": "Yellow Garden Spider", "tier": "Common" },
+        { "species": "Trichonephila clavata", "common": "Joro Spider", "tier": "Uncommon", "flags": { "invasive": true } }
+      ]
+    },
+    {
+      "group": "Myriapods – Centipedes",
+      "mode": "genus-first",
+      "entries": [
+        { "species": "Scutigera coleoptrata", "common": "House Centipede", "tier": "Common" }
+      ]
+    },
+    {
+      "group": "Myriapods – Millipedes",
+      "mode": "genus-first",
+      "entries": [
+        { "species": "Apheloria tigana", "common": "Yellow-banded Millipede", "tier": "Uncommon" },
+        { "genus": "Narceus", "common": "Giant Millipedes (Narceus spp.)", "tier": "Common" }
+      ]
+    }
+  ]
+}

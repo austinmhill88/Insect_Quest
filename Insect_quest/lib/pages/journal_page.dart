@@ -1,0 +1,77 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/capture.dart';
+
+class JournalPage extends StatefulWidget {
+  const JournalPage({super.key});
+  static const _key = "captures";
+
+  static Future<List<Capture>> loadCaptures() async {
+    final sp = await SharedPreferences.getInstance();
+    final txt = sp.getString(_key);
+    if (txt == null) return [];
+    final arr = jsonDecode(txt) as List<dynamic>;
+    return arr.map((e) => Capture.fromJson(Map<String, dynamic>.from(e))).toList();
+  }
+
+  static Future<void> saveCapture(Capture cap) async {
+    final list = await loadCaptures();
+    list.add(cap);
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString(_key, jsonEncode(list.map((e) => e.toJson()).toList()));
+  }
+
+  @override
+  State<JournalPage> createState() => _JournalPageState();
+}
+
+class _JournalPageState extends State<JournalPage> {
+  List<Capture> captures = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    captures = await JournalPage.loadCaptures();
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Journal')),
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView.builder(
+          itemCount: captures.length,
+          itemBuilder: (ctx, i) {
+            final c = captures[i];
+            return Card(
+              margin: const EdgeInsets.all(12),
+              child: ListTile(
+                leading: Image.file(Uri.parse(c.photoPath).isAbsolute ? File(c.photoPath) : File(c.photoPath)),
+                title: Text(c.species ?? c.genus),
+                subtitle: Text("${c.group} • ${c.tier} • ${c.points} pts • ${c.geocell}"),
+                trailing: Wrap(
+                  spacing: 6,
+                  children: [
+                    if (c.flags["state_species"] == true)
+                      const Chip(label: Text("State Species"), avatar: Icon(Icons.star, size: 16)),
+                    if (c.flags["invasive"] == true)
+                      const Chip(label: Text("Invasive"), avatar: Icon(Icons.warning_amber_rounded, size: 16)),
+                    if (c.flags["venomous"] == true)
+                      const Chip(label: Text("Venomous"), avatar: Icon(Icons.health_and_safety, size: 16)),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
