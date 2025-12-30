@@ -6,51 +6,51 @@
       "group": "Butterflies",
       "mode": "species-preferred",
       "entries": [
-        { "species": "Papilio glaucus", "common": "Eastern Tiger Swallowtail", "tier": "Legendary", "flags": { "state_species": true, "distinctive": true } },
-        { "species": "Papilio troilus", "common": "Spicebush Swallowtail", "tier": "Uncommon" },
-        { "species": "Danaus plexippus", "common": "Monarch", "tier": "Uncommon" },
-        { "species": "Pieris rapae", "common": "Cabbage White", "tier": "Common" }
+        { "species": "Papilio glaucus", "common": "Eastern Tiger Swallowtail", "tier": "Legendary", "flags": { "state_species": true, "distinctive": true, "safe_for_kids": true } },
+        { "species": "Papilio troilus", "common": "Spicebush Swallowtail", "tier": "Uncommon", "flags": { "safe_for_kids": true } },
+        { "species": "Danaus plexippus", "common": "Monarch", "tier": "Uncommon", "flags": { "safe_for_kids": true } },
+        { "species": "Pieris rapae", "common": "Cabbage White", "tier": "Common", "flags": { "safe_for_kids": true } }
       ]
     },
     {
       "group": "Bees/Wasps",
       "mode": "genus-first",
       "entries": [
-        { "species": "Apis mellifera", "common": "Honey Bee", "tier": "Legendary", "flags": { "state_species": true } },
-        { "genus": "Bombus", "common": "Bumblebees", "tier": "Uncommon" },
-        { "genus": "Polistes", "common": "Paper Wasps", "tier": "Uncommon" }
+        { "species": "Apis mellifera", "common": "Honey Bee", "tier": "Legendary", "flags": { "state_species": true, "safe_for_kids": true } },
+        { "genus": "Bombus", "common": "Bumblebees", "tier": "Uncommon", "flags": { "safe_for_kids": true } },
+        { "genus": "Polistes", "common": "Paper Wasps", "tier": "Uncommon", "flags": { "safe_for_kids": false } }
       ]
     },
     {
       "group": "Beetles",
       "mode": "genus-first",
       "entries": [
-        { "species": "Dynastes tityus", "common": "Eastern Hercules Beetle", "tier": "Legendary" },
-        { "species": "Harmonia axyridis", "common": "Asian Lady Beetle", "tier": "Common", "flags": { "invasive": true } }
+        { "species": "Dynastes tityus", "common": "Eastern Hercules Beetle", "tier": "Legendary", "flags": { "safe_for_kids": true } },
+        { "species": "Harmonia axyridis", "common": "Asian Lady Beetle", "tier": "Common", "flags": { "invasive": true, "safe_for_kids": true } }
       ]
     },
     {
       "group": "Arachnids – Spiders",
       "mode": "genus-first",
       "entries": [
-        { "species": "Phidippus audax", "common": "Bold Jumping Spider", "tier": "Common" },
-        { "species": "Argiope aurantia", "common": "Yellow Garden Spider", "tier": "Common" },
-        { "species": "Trichonephila clavata", "common": "Joro Spider", "tier": "Uncommon", "flags": { "invasive": true } }
+        { "species": "Phidippus audax", "common": "Bold Jumping Spider", "tier": "Common", "flags": { "safe_for_kids": false } },
+        { "species": "Argiope aurantia", "common": "Yellow Garden Spider", "tier": "Common", "flags": { "safe_for_kids": false } },
+        { "species": "Trichonephila clavata", "common": "Joro Spider", "tier": "Uncommon", "flags": { "invasive": true, "safe_for_kids": false } }
       ]
     },
     {
       "group": "Myriapods – Centipedes",
       "mode": "genus-first",
       "entries": [
-        { "species": "Scutigera coleoptrata", "common": "House Centipede", "tier": "Common" }
+        { "species": "Scutigera coleoptrata", "common": "House Centipede", "tier": "Common", "flags": { "safe_for_kids": false } }
       ]
     },
     {
       "group": "Myriapods – Millipedes",
       "mode": "genus-first",
       "entries": [
-        { "species": "Apheloria tigana", "common": "Yellow-banded Millipede", "tier": "Uncommon" },
-        { "genus": "Narceus", "common": "Giant Millipedes (Narceus spp.)", "tier": "Common" }
+        { "species": "Apheloria tigana", "common": "Yellow-banded Millipede", "tier": "Uncommon", "flags": { "safe_for_kids": true } },
+        { "genus": "Narceus", "common": "Giant Millipedes (Narceus spp.)", "tier": "Common", "flags": { "safe_for_kids": true } }
       ]
     }
   ]
