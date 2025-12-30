@@ -14,6 +14,7 @@ import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
 import '../services/quest_service.dart';
+import '../widgets/pin_dialogs.dart';
 import '../services/streak_service.dart';
 import '../services/achievement_service.dart';
 import '../services/anti_cheat_service.dart';
@@ -245,6 +246,8 @@ class _CameraPageState extends State<CameraPage> {
     final coarseLat = double.parse(geocellParts[0]);
     final coarseLon = double.parse(geocellParts[1]);
 
+    // Identification stub - pass kidsMode to filter species
+    final analysis = await ml.analyze(imagePath: file.path, lat: lat, lon: lon, kidsMode: kidsMode);
     // Identification stub (uses precise location for better suggestions, but doesn't save it)
     final analysis = await ml.analyze(imagePath: file.path, lat: preciseLatitude, lon: preciseLongitude);
     final genus = analysis["genus"] as String;
@@ -404,6 +407,91 @@ class _CameraPageState extends State<CameraPage> {
     // Save and navigate to Journal
     await JournalPage.saveCapture(cap);
     
+    // Check and update quest progress
+    final completedQuests = await QuestService.updateProgressForCapture(cap, kidsMode);
+    
+    if (mounted) {
+      String message = "Saved capture (+$pts pts)";
+      
+      // Show quest completion notification with encouraging message
+      if (completedQuests.isNotEmpty) {
+        if (completedQuests.length == 1) {
+          final quest = completedQuests.first;
+          if (kidsMode) {
+            message = "🎉 Great job! You completed: ${quest.title}! (+${quest.rewardPoints} pts)";
+          } else {
+            message += "\n✨ Quest completed: ${quest.title} (+${quest.rewardPoints} pts)";
+          }
+        } else {
+          // Multiple quests completed
+          final totalQuestPoints = completedQuests.fold<int>(0, (sum, q) => sum + q.rewardPoints);
+          if (kidsMode) {
+            message = "🎉 Amazing! You completed ${completedQuests.length} quests! (+$totalQuestPoints pts)";
+          } else {
+            message += "\n✨ ${completedQuests.length} quests completed! (+$totalQuestPoints pts)";
+          }
+        }
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  Future<void> _toggleKidsMode(bool newValue) async {
+    // If turning OFF Kids Mode, require PIN verification
+    if (!newValue && kidsMode) {
+      final isPinSetup = await SettingsService.isPinSetup();
+      
+      if (!isPinSetup) {
+        // First time - set up PIN
+        if (!mounted) return;
+        final pin = await showDialog<String>(
+          context: context,
+          builder: (ctx) => const PinSetupDialog(),
+        );
+        
+        if (pin == null) return; // User cancelled
+        await SettingsService.setPin(pin);
+      }
+      
+      // Verify PIN
+      if (!mounted) return;
+      final enteredPin = await showDialog<String>(
+        context: context,
+        builder: (ctx) => const PinVerifyDialog(
+          title: "🔒 Disable Kids Mode",
+          message: "Enter your parental PIN to disable Kids Mode",
+        ),
+      );
+      
+      if (enteredPin == null) return; // User cancelled
+      
+      final isValid = await SettingsService.verifyPin(enteredPin);
+      if (!isValid) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Incorrect PIN")),
+        );
+        return;
+      }
+    }
+    
+    // Update Kids Mode
+    await SettingsService.setKidsMode(newValue);
+    setState(() => kidsMode = newValue);
+    
+    if (mounted) {
+      final message = newValue
+          ? "🛡️ Kids Mode enabled - Safe and fun!"
+          : "Kids Mode disabled";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     // Update quest progress
     final completedQuests = await QuestService.updateQuestProgress(cap);
     
@@ -506,10 +594,7 @@ class _CameraPageState extends State<CameraPage> {
                 FilterChip(
                   label: const Text("Kids Mode"),
                   selected: kidsMode,
-                  onSelected: (v) async {
-                    await SettingsService.setKidsMode(v);
-                    setState(() => kidsMode = v);
-                  },
+                  onSelected: _toggleKidsMode,
                 ),
                 FloatingActionButton.extended(
                   icon: const Icon(Icons.camera),
@@ -520,19 +605,109 @@ class _CameraPageState extends State<CameraPage> {
             ),
           ),
         ),
-        // Simple framing overlay
+        // Framing overlay - enhanced for Kids Mode
         IgnorePointer(
           child: Center(
             child: Container(
               width: 240,
               height: 240,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
-                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: kidsMode
+                      ? Colors.yellow.withOpacity(0.9)
+                      : Colors.white.withOpacity(0.8),
+                  width: kidsMode ? 4 : 2,
+                ),
+                borderRadius: BorderRadius.circular(kidsMode ? 16 : 8),
               ),
+              child: kidsMode
+                  ? Stack(
+                      children: [
+                        // Corner decorations
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Text(
+                            "🦋",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Text(
+                            "🐝",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: Text(
+                            "🪲",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Text(
+                            "🐞",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ],
+                    )
+                  : null,
             ),
           ),
         ),
+        // Kids Mode encouragement banner
+        if (kidsMode)
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.yellow.shade700.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "🌟",
+                    style: TextStyle(fontSize: 24),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Find a bug and take a photo!",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const Text(
+                    "🌟",
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }

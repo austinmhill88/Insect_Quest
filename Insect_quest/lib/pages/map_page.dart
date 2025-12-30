@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'journal_page.dart';
 import '../models/capture.dart';
 import '../services/settings_service.dart';
+import '../widgets/pin_dialogs.dart';
 import '../services/leaderboard_service.dart';
 import '../utils/ui_utils.dart';
 
@@ -179,6 +180,59 @@ class _MapPageState extends State<MapPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _toggleKidsMode(bool newValue) async {
+    // If turning OFF Kids Mode, require PIN verification
+    if (!newValue && kidsMode) {
+      final isPinSetup = await SettingsService.isPinSetup();
+      
+      if (!isPinSetup) {
+        // First time - set up PIN
+        final pin = await showDialog<String>(
+          context: context,
+          builder: (ctx) => const PinSetupDialog(),
+        );
+        
+        if (pin == null) return; // User cancelled
+        await SettingsService.setPin(pin);
+      }
+      
+      // Verify PIN
+      final enteredPin = await showDialog<String>(
+        context: context,
+        builder: (ctx) => const PinVerifyDialog(
+          title: "🔒 Disable Kids Mode",
+          message: "Enter your parental PIN to disable Kids Mode",
+        ),
+      );
+      
+      if (enteredPin == null) return; // User cancelled
+      
+      final isValid = await SettingsService.verifyPin(enteredPin);
+      if (!isValid) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("❌ Incorrect PIN")),
+          );
+        }
+        return;
+      }
+    }
+    
+    // Update Kids Mode
+    await SettingsService.setKidsMode(newValue);
+    setState(() => kidsMode = newValue);
+    await _loadMarkers();
+    
+    if (mounted) {
+      final message = newValue
+          ? "🛡️ Kids Mode enabled - Map markers hidden for privacy"
+          : "Kids Mode disabled - Map markers visible";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
   }
 
   @override
