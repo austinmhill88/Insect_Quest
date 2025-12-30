@@ -142,6 +142,11 @@ class FirestoreService {
         final offeringUserCoins = offeringUserSnapshot.data()?['coins'] ?? 0;
         final acceptingUserCoins = acceptingUserSnapshot.data()?['coins'] ?? 0;
 
+        // Validate offering user has enough coins to pay
+        if (offeringUserCoins < trade.coinsOffered) {
+          throw Exception('Offering user has insufficient coins');
+        }
+
         // Offering user pays coinsOffered and receives coinsRequested
         transaction.update(offeringUserDoc, {
           'coins': offeringUserCoins - trade.coinsOffered + trade.coinsRequested,

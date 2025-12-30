@@ -41,7 +41,17 @@ class Scoring {
     return p.round();
   }
 
-  // Coin scoring for card minting
+  /// Calculate coins awarded for minting a card (capturing an insect).
+  /// 
+  /// Coins are based on rarity tier and photo quality:
+  /// - Common: 50 base (42-57 after quality)
+  /// - Uncommon: 112 base (95-129 after quality)
+  /// - Rare: 300 base (255-345 after quality)
+  /// - Epic: 720 base (612-828 after quality)
+  /// - Legendary: 1500 base (1275-1725 after quality)
+  /// 
+  /// Quality multiplier ranges from 0.85x to 1.15x based on photo quality.
+  /// Should be clamped to reasonable bounds (0-10,000) by caller.
   static int coins({
     required String tier,
     required double qualityMult,

@@ -1,7 +1,6 @@
 enum TradeStatus {
   listed,
   pending,
-  accepted,
   cancelled,
   completed,
 }
