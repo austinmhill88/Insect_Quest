@@ -1,0 +1,12 @@
+PLACEHOLDER: Camera Framing Guide Icon
+========================================
+
+This is a placeholder for a camera framing guide icon.
+
+When ready to implement:
+- Replace with an actual icon file (PNG/SVG)
+- Recommended size: 24x24dp or vector format
+- Design: Simple camera frame/grid icon
+- Color: White or light colored for visibility on camera preview
+
+Current implementation uses Flutter's built-in Icons.camera

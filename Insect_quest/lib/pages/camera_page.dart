@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,8 +9,27 @@ import '../config/feature_flags.dart';
 import '../models/capture.dart';
 import '../models/genus_suggestion.dart';
 import '../services/identifier_service.dart';
+import '../models/quality_metrics.dart';
+import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../widgets/camera_overlay.dart';
+import '../models/arthropod_card.dart';
+import '../services/ml_stub.dart';
+import '../services/catalog_service.dart';
+import '../services/settings_service.dart';
+import '../services/card_service.dart';
+import '../models/quest.dart';
+import '../models/achievement.dart';
+import '../services/ml_stub.dart';
+import '../services/catalog_service.dart';
+import '../services/settings_service.dart';
+import '../services/quest_service.dart';
+import '../widgets/pin_dialogs.dart';
+import '../services/streak_service.dart';
+import '../services/achievement_service.dart';
+import '../services/anti_cheat_service.dart';
+import '../services/liveness_service.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -54,65 +72,7 @@ class _CameraPageState extends State<CameraPage> {
     super.dispose();
   }
 
-  double _computeSharpness(img.Image im) {
-    // Laplacian-like measure (simple proxy)
-    double sum = 0;
-    for (int y = 1; y < im.height - 1; y += 10) {
-      for (int x = 1; x < im.width - 1; x += 10) {
-        final c = img.getLuminance(im.getPixel(x, y)).toDouble();
-        final up = img.getLuminance(im.getPixel(x, y - 1)).toDouble();
-        final dn = img.getLuminance(im.getPixel(x, y + 1)).toDouble();
-        final lf = img.getLuminance(im.getPixel(x - 1, y)).toDouble();
-        final rt = img.getLuminance(im.getPixel(x + 1, y)).toDouble();
-        final lap = (4 * c) - (up + dn + lf + rt);
-        sum += lap.abs();
-      }
-    }
-    // Normalize to 0.85–1.10 range
-    double s = 0.85 + min(sum / 500000.0, 0.25);
-    return s.clamp(0.85, 1.10);
-  }
 
-  double _computeExposure(img.Image im) {
-    int midtones = 0, total = 0;
-    for (int y = 0; y < im.height; y += 20) {
-      for (int x = 0; x < im.width; x += 20) {
-        final lum = img.getLuminance(im.getPixel(x, y));
-        total++;
-        if (lum > 60 && lum < 190) midtones++;
-      }
-    }
-    final ratio = midtones / max(total, 1);
-    double e = 0.90 + (ratio * 0.15); // 0.90–1.05
-    return e.clamp(0.90, 1.05);
-  }
-
-  double _computeFraming(img.Image im) {
-    // Heuristic: central crop brightness vs edges
-    final cx = im.width ~/ 2;
-    final cy = im.height ~/ 2;
-    int centerSum = 0, edgeSum = 0;
-    int centerCount = 0, edgeCount = 0;
-
-    for (int y = 0; y < im.height; y += 15) {
-      for (int x = 0; x < im.width; x += 15) {
-        final lum = img.getLuminance(im.getPixel(x, y));
-        final dist = sqrt(pow((x - cx).abs().toDouble(), 2) + pow((y - cy).abs().toDouble(), 2));
-        if (dist < min(im.width, im.height) * 0.25) {
-          centerSum += lum;
-          centerCount++;
-        } else {
-          edgeSum += lum;
-          edgeCount++;
-        }
-      }
-    }
-    final centerAvg = centerSum / max(centerCount, 1);
-    final edgeAvg = edgeSum / max(edgeCount, 1);
-    final ratio = centerAvg / max(edgeAvg, 1);
-    double f = 0.90 + min((ratio - 1.0) * 0.2, 0.25); // reward centered subject
-    return f.clamp(0.90, 1.15);
-  }
 
   String _geocell(double lat, double lon) {
     // Coarse ~1km cell using rounding
@@ -126,19 +86,17 @@ class _CameraPageState extends State<CameraPage> {
     final bytes = await File(file.path).readAsBytes();
     final im = img.decodeImage(bytes)!;
 
-    // Quality
-    final sharpness = _computeSharpness(im);
-    final exposure = _computeExposure(im);
-    final framing = _computeFraming(im);
+    // Quality analysis using modular QualityMetrics
+    final metrics = QualityMetrics.analyze(im);
     final qMult = Scoring.qualityMultiplier(
-      sharpness: sharpness,
-      exposure: exposure,
-      framing: framing,
+      sharpness: metrics.sharpness,
+      exposure: metrics.exposure,
+      framing: metrics.framing,
       kidsMode: kidsMode,
     );
 
-    // Task 10: Retake prompt for low-quality shots
-    if (sharpness < 0.9 || framing < 0.9) {
+    // Retake prompt for low-quality shots
+    if (!metrics.meetsThreshold(0.9)) {
       if (mounted) {
         final retake = await showDialog<bool>(
           context: context,
@@ -163,11 +121,81 @@ class _CameraPageState extends State<CameraPage> {
       }
     }
 
+    // Location - use only coarse geocell coordinates (no precise locations saved)
+    // Anti-cheat validation
+    Map<String, dynamic> validationResult = {
+      'validationStatus': AntiCheatService.validationValid,
+      'photoHash': '',
+      'hasExif': true,
+      'isDuplicate': false,
+    };
+    
+    if (Flags.exifValidationEnabled || Flags.duplicateDetectionEnabled) {
+      validationResult = await AntiCheatService.validateCapture(file.path);
+      
+      // Handle rejected captures
+      if (validationResult['validationStatus'] == AntiCheatService.validationRejected) {
+        if (mounted) {
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text("❌ Capture Rejected"),
+              content: Text(
+                validationResult['rejectionReason'] ?? 'This capture failed validation checks.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+        return; // Exit without saving
+      }
+      
+      // Show warning for flagged captures
+      if (validationResult['validationStatus'] == AntiCheatService.validationFlagged) {
+        if (mounted) {
+          final proceed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text("⚠️ Validation Warning"),
+              content: const Text(
+                'This photo has been flagged during validation. '
+                'It may have missing or unusual metadata. '
+                'Would you like to proceed anyway?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text("Proceed"),
+                ),
+              ],
+            ),
+          );
+          if (proceed != true) {
+            return; // Exit without saving
+          }
+        }
+      }
+    }
+
     // Location
     final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
-    final lat = pos.latitude;
-    final lon = pos.longitude;
-    final geocell = _geocell(lat, lon);
+    final preciseLatitude = pos.latitude;
+    final preciseLongitude = pos.longitude;
+    final geocell = _geocell(preciseLatitude, preciseLongitude);
+    
+    // Parse geocell to get coarse coordinates (these are the only ones we save)
+    final geocellParts = geocell.split(',');
+    final coarseLat = double.parse(geocellParts[0]);
+    final coarseLon = double.parse(geocellParts[1]);
 
     // Genus-first identification
     final genusSuggestions = await identifier.identifyGenus(
@@ -185,6 +213,12 @@ class _CameraPageState extends State<CameraPage> {
       // User cancelled
       return;
     }
+    // Identification stub - pass kidsMode to filter species
+    final analysis = await ml.analyze(imagePath: file.path, lat: lat, lon: lon, kidsMode: kidsMode);
+    // Identification stub (uses precise location for better suggestions, but doesn't save it)
+    final analysis = await ml.analyze(imagePath: file.path, lat: preciseLatitude, lon: preciseLongitude);
+    final genus = analysis["genus"] as String;
+    final candidates = List<Map<String, dynamic>>.from(analysis["species_candidates"]);
 
     // Step 2: Allow user to optionally specify species or keep genus-only
     String genus = selectedGenus.genus;
@@ -233,6 +267,52 @@ class _CameraPageState extends State<CameraPage> {
       // tier stays "Legendary" for badge display
     }
 
+    // Safety tips for spiders and centipedes in Kids Mode
+    if (kidsMode && group != null) {
+      bool showSafetyTip = false;
+      String safetyMessage = "";
+      
+      if (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider")) {
+        showSafetyTip = true;
+        safetyMessage = "Great find! Remember to observe spiders from a safe distance. "
+            "Never touch spiders with your bare hands. Some spiders can bite if they feel threatened.";
+      } else if (group == "Myriapods – Centipedes" || group.toLowerCase().contains("centipede")) {
+        showSafetyTip = true;
+        safetyMessage = "Great find! Remember to observe centipedes from a safe distance. "
+            "Never touch centipedes with your bare hands. Centipedes can bite and may cause irritation.";
+      }
+      
+      if (showSafetyTip && mounted) {
+    // Liveness verification for rare/legendary captures (optional)
+    bool livenessVerified = false;
+    if (LivenessService.isLivenessRequired(tier, enabled: Flags.livenessCheckEnabled)) {
+      if (mounted && controller != null) {
+        livenessVerified = await LivenessService.verifyLiveness(context, controller!);
+        if (!livenessVerified) {
+          // User failed or cancelled liveness check
+          if (mounted) {
+            await showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("❌ Liveness Verification Failed"),
+                content: const Text(
+                  'Liveness verification is required for rare and legendary captures. '
+                  'Please try again.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+            );
+          }
+          return; // Exit without saving
+        }
+      }
+    }
+
     // Task 9: Kids Mode - Show safety tips banner for spiders
     if (kidsMode && group != null && (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider"))) {
       if (mounted) {
@@ -240,10 +320,7 @@ class _CameraPageState extends State<CameraPage> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text("🛡️ Safety Tip"),
-            content: const Text(
-              "Great find! Remember to observe spiders from a safe distance. "
-              "Never touch spiders with your bare hands. Some spiders can bite if they feel threatened."
-            ),
+            content: Text(safetyMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -262,17 +339,25 @@ class _CameraPageState extends State<CameraPage> {
       firstGenus: false, // MVP: no novelty tracking
     );
 
-    debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
+    debugPrint("Quality: ${metrics.toString()} qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
     debugPrint("Points: $pts");
+    debugPrint("Anti-cheat: status=${validationResult['validationStatus']} hash=${validationResult['photoHash']} hasExif=${validationResult['hasExif']} liveness=$livenessVerified");
+
+    final captureId = const Uuid().v4();
+    final captureTimestamp = DateTime.now();
 
     // Build capture
+    // Build capture (only coarse geocell coordinates saved, not precise location)
     final cap = Capture(
-      id: const Uuid().v4(),
+      id: captureId,
       photoPath: file.path,
-      timestamp: DateTime.now(),
+      timestamp: captureTimestamp,
       lat: lat,
       lon: lon,
+      timestamp: DateTime.now(),
+      lat: coarseLat,  // Coarse coordinate from geocell
+      lon: coarseLon,  // Coarse coordinate from geocell
       geocell: geocell,
       group: group,
       genus: genus,
@@ -281,12 +366,72 @@ class _CameraPageState extends State<CameraPage> {
       flags: flags,
       points: pts,
       quality: qMult,
+      validationStatus: validationResult['validationStatus'],
+      photoHash: validationResult['photoHash'],
+      hasExif: validationResult['hasExif'],
+      livenessVerified: livenessVerified,
     );
 
-    // Save and navigate to Journal
+    // Mint collectible card
+    final card = CardService.mintCard(
+      id: captureId,
+      userId: "local_user", // MVP: use placeholder user ID
+      genus: genus,
+      species: species,
+      tier: tier,
+      quality: qMult,
+      timestamp: captureTimestamp,
+      geocell: geocell,
+      photoPath: file.path,
+      flags: flags,
+    );
+
+    // Save capture and card
     await JournalPage.saveCapture(cap);
+    await CardService.saveCard(card);
+
+    debugPrint("Card minted: rarity=${card.rarity} foil=${card.foil} traits=${card.traits}");
+
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Saved capture (+$pts pts)")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Saved capture (+$pts pts) • ${card.rarity} card minted!"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    
+    // Check and update quest progress
+    final completedQuests = await QuestService.updateProgressForCapture(cap, kidsMode);
+    
+    if (mounted) {
+      String message = "Saved capture (+$pts pts)";
+      
+      // Show quest completion notification with encouraging message
+      if (completedQuests.isNotEmpty) {
+        if (completedQuests.length == 1) {
+          final quest = completedQuests.first;
+          if (kidsMode) {
+            message = "🎉 Great job! You completed: ${quest.title}! (+${quest.rewardPoints} pts)";
+          } else {
+            message += "\n✨ Quest completed: ${quest.title} (+${quest.rewardPoints} pts)";
+          }
+        } else {
+          // Multiple quests completed
+          final totalQuestPoints = completedQuests.fold<int>(0, (sum, q) => sum + q.rewardPoints);
+          if (kidsMode) {
+            message = "🎉 Amazing! You completed ${completedQuests.length} quests! (+$totalQuestPoints pts)";
+          } else {
+            message += "\n✨ ${completedQuests.length} quests completed! (+$totalQuestPoints pts)";
+          }
+        }
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -479,6 +624,139 @@ class _CameraPageState extends State<CameraPage> {
           ],
         );
       },
+  Future<void> _toggleKidsMode(bool newValue) async {
+    // If turning OFF Kids Mode, require PIN verification
+    if (!newValue && kidsMode) {
+      final isPinSetup = await SettingsService.isPinSetup();
+      
+      if (!isPinSetup) {
+        // First time - set up PIN
+        if (!mounted) return;
+        final pin = await showDialog<String>(
+          context: context,
+          builder: (ctx) => const PinSetupDialog(),
+        );
+        
+        if (pin == null) return; // User cancelled
+        await SettingsService.setPin(pin);
+      }
+      
+      // Verify PIN
+      if (!mounted) return;
+      final enteredPin = await showDialog<String>(
+        context: context,
+        builder: (ctx) => const PinVerifyDialog(
+          title: "🔒 Disable Kids Mode",
+          message: "Enter your parental PIN to disable Kids Mode",
+        ),
+      );
+      
+      if (enteredPin == null) return; // User cancelled
+      
+      final isValid = await SettingsService.verifyPin(enteredPin);
+      if (!isValid) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Incorrect PIN")),
+        );
+        return;
+      }
+    }
+    
+    // Update Kids Mode
+    await SettingsService.setKidsMode(newValue);
+    setState(() => kidsMode = newValue);
+    
+    if (mounted) {
+      final message = newValue
+          ? "🛡️ Kids Mode enabled - Safe and fun!"
+          : "Kids Mode disabled";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    // Update quest progress
+    final completedQuests = await QuestService.updateQuestProgress(cap);
+    
+    // Update streak
+    final newStreak = await StreakService.updateStreak();
+    
+    // Check achievements
+    final captures = await JournalPage.loadCaptures();
+    final unlockedAchievements = await AchievementService.checkAchievements(captures, newStreak);
+    
+    if (mounted) {
+      String message = "Saved capture (+$pts pts)";
+      
+      // Add quest completion notifications
+      if (completedQuests.isNotEmpty) {
+        message += "\n🎯 Quest completed!";
+      }
+      
+      // Add streak notification
+      if (newStreak.currentStreak > 1) {
+        message += "\n🔥 ${newStreak.currentStreak} day streak!";
+      }
+      
+      // Add achievement notifications
+      if (unlockedAchievements.isNotEmpty) {
+        message += "\n🏆 Achievement unlocked!";
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      
+      // Show detailed quest/achievement notifications
+      if (completedQuests.isNotEmpty || unlockedAchievements.isNotEmpty) {
+        _showRewardsDialog(completedQuests, unlockedAchievements);
+      }
+    }
+  }
+  
+  void _showRewardsDialog(List<Quest> completedQuests, List<Achievement> achievements) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🎉 Rewards!'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (completedQuests.isNotEmpty) ...[
+                const Text(
+                  'Quests Completed:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...completedQuests.map((q) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('• ${q.title}'),
+                )),
+                const SizedBox(height: 8),
+              ],
+              if (achievements.isNotEmpty) ...[
+                const Text(
+                  'Achievements Unlocked:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...achievements.map((a) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('• ${a.title}'),
+                )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Awesome!'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -488,6 +766,12 @@ class _CameraPageState extends State<CameraPage> {
     return Stack(
       children: [
         CameraPreview(controller!),
+        // Kids Mode banner
+        if (kidsMode) const KidsModeBanner(),
+        // Enhanced camera overlay with guidance
+        IgnorePointer(
+          child: CameraOverlay(showTips: true),
+        ),
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
@@ -498,10 +782,7 @@ class _CameraPageState extends State<CameraPage> {
                 FilterChip(
                   label: const Text("Kids Mode"),
                   selected: kidsMode,
-                  onSelected: (v) async {
-                    await SettingsService.setKidsMode(v);
-                    setState(() => kidsMode = v);
-                  },
+                  onSelected: _toggleKidsMode,
                 ),
                 FloatingActionButton.extended(
                   icon: const Icon(Icons.camera),
@@ -512,19 +793,109 @@ class _CameraPageState extends State<CameraPage> {
             ),
           ),
         ),
-        // Simple framing overlay
+        // Framing overlay - enhanced for Kids Mode
         IgnorePointer(
           child: Center(
             child: Container(
               width: 240,
               height: 240,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
-                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: kidsMode
+                      ? Colors.yellow.withOpacity(0.9)
+                      : Colors.white.withOpacity(0.8),
+                  width: kidsMode ? 4 : 2,
+                ),
+                borderRadius: BorderRadius.circular(kidsMode ? 16 : 8),
               ),
+              child: kidsMode
+                  ? Stack(
+                      children: [
+                        // Corner decorations
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Text(
+                            "🦋",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Text(
+                            "🐝",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: Text(
+                            "🪲",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Text(
+                            "🐞",
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ],
+                    )
+                  : null,
             ),
           ),
         ),
+        // Kids Mode encouragement banner
+        if (kidsMode)
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.yellow.shade700.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "🌟",
+                    style: TextStyle(fontSize: 24),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Find a bug and take a photo!",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const Text(
+                    "🌟",
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
