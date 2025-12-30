@@ -247,9 +247,72 @@ Implemented across multiple files:
 
 ---
 
+## ✅ Task 11: Anti-Cheat & Validation System
+**Status:** COMPLETE
+
+Implemented comprehensive anti-cheat pipeline to prevent fraud and ensure capture integrity:
+
+### EXIF Validation
+- ✅ Added `exif: ^3.3.0` package to pubspec.yaml
+- ✅ `AntiCheatService.hasValidExif()` extracts and validates EXIF metadata
+- ✅ Checks for camera-specific fields (Make, Model, DateTime)
+- ✅ Detects and blocks screenshots (software tag without camera info)
+- ✅ Flags photos with missing critical metadata
+- ✅ Logs suspicious/rejected captures for admin review
+
+### Duplicate Detection
+- ✅ Added `crypto: ^3.0.3` package for hashing
+- ✅ Implemented perceptual hash generation using dHash algorithm
+- ✅ Stores photo hashes in SharedPreferences
+- ✅ Detects exact and near-duplicate photos (Hamming distance ≤ 5)
+- ✅ Prevents multiple card mints from same photo
+- ✅ Handles slight variations (cropping, compression)
+
+### Liveness Verification (Optional)
+- ✅ Created `LivenessService` for camera movement verification
+- ✅ Liveness dialog with timed movement prompts
+- ✅ Automatic trigger for Epic/Legendary captures (when enabled)
+- ✅ Blocks capture if verification fails
+- ✅ Configurable via `Flags.livenessCheckEnabled` (disabled by default)
+
+### Admin System
+- ✅ Extended `Capture` model with validation fields:
+  - `validationStatus`: "valid", "flagged", "rejected"
+  - `photoHash`: Perceptual hash for duplicate tracking
+  - `hasExif`: Boolean flag for EXIF presence
+  - `livenessVerified`: Boolean for liveness check status
+- ✅ Suspicious capture logging to JSON file
+- ✅ `AdminPage` for reviewing flagged/rejected captures
+- ✅ Admin panel accessible from Journal page
+- ✅ View logs with timestamps, reasons, and image paths
+- ✅ Clear logs functionality
+
+### Integration
+- ✅ Anti-cheat checks run on every capture
+- ✅ Rejection dialog for blocked captures
+- ✅ Warning dialog for flagged captures (user can proceed)
+- ✅ Journal displays validation status
+- ✅ Debug logging for validation results
+- ✅ Feature flags for enabling/disabling each check
+
+### Documentation
+- ✅ **docs/anti_cheat_system.md** - Comprehensive guide covering:
+  - System overview and architecture
+  - Feature descriptions and technical details
+  - Configuration and API reference
+  - Testing scenarios and troubleshooting
+  - Security considerations
+  - Future enhancements
+- ✅ Updated README.md with anti-cheat section
+- ✅ Inline code documentation for all new services
+
+**Definition of Done:** ✅ All card mints run anti-cheat; obvious fraud blocked, flagged, or reviewed in admin panel; Users cannot mint multiple cards from same photo; Liveness bonus can be optionally required for rares; All code documented for review/extension
+
+---
+
 ## 📚 Additional Deliverables
 
-Beyond the 10 tasks, the following were also created:
+Beyond the 11 tasks, the following were also created:
 
 ### Documentation
 
@@ -401,12 +464,96 @@ Implemented a comprehensive quest engine for ongoing user engagement:
 - `lib/main.dart` - Quest system initialization and navigation
 
 **Definition of Done:** ✅ Engine supports multiple quest types, completions, and streak logic; Quest UI shows progress and rewards; Streak and achievements shown in profile; Quest rewards grant coins
+## ✅ Enhancement: Geocell Map Aggregation and Regional Leaderboards
+**Status:** COMPLETE
+
+### Map Improvements
+- ✅ **Aggregate markers by geocell** instead of individual pins
+  - Each marker represents all captures in that ~1km region
+  - Marker info window shows total card count and points
+  - Tapping marker opens bottom sheet with detailed leader list
+  
+- ✅ **Leader list bottom sheet**
+  - Displays all captures in the selected geocell
+  - Sorted by points (highest first)
+  - Shows species/genus, tier, group, points, and quality
+  - Color-coded badges by rarity tier
+  - Draggable sheet with scroll support
+
+- ✅ **Privacy maintained**
+  - Kids Mode continues to hide all map markers
+  - Privacy banner shown when Kids Mode active
+  - Only coarse geocell data displayed (no precise locations)
+
+### Regional Leaderboard Page
+- ✅ **New navigation tab** (4th tab with trophy icon)
+  - Full-page leaderboard view
+  - Ranked by total points per geocell
+  - Refresh button to reload data
+  
+- ✅ **Leaderboard features**
+  - Top 3 regions get medal badges (gold, silver, bronze)
+  - Each entry shows:
+    - Region geocell coordinates
+    - Total card count
+    - Number of unique species
+    - Total points earned
+  - Tap any entry to see detailed capture list
+  
+- ✅ **Kids Mode privacy**
+  - Entire leaderboard hidden when Kids Mode active
+  - Privacy message with lock icon
+  - Quick toggle to disable Kids Mode if desired
+
+### Database & Privacy
+- ✅ **No precise locations saved**
+  - Capture model updated with clear documentation
+  - Only coarse lat/lon from geocell stored (0.01° precision)
+  - Precise GPS coordinates never persisted
+  - ML identification uses precise location but doesn't save it
+  
+- ✅ **LeaderboardService**
+  - Aggregates captures by geocell
+  - Calculates card count and total points per region
+  - Provides sorted leaderboard data
+  - Utility functions for geocell parsing
+
+### Documentation
+- ✅ **README.md updated** with:
+  - New leaderboard feature in feature list
+  - Usage instructions for viewing leaderboards
+  - Updated map usage instructions (aggregate markers)
+  - Comprehensive geocell system explanation
+  - Privacy-first design documentation
+  - Kids Mode leaderboard privacy
+  
+- ✅ **Code documentation**
+  - All new services documented with dartdoc comments
+  - Inline comments explaining privacy design
+  - Clear separation of precise vs coarse coordinates in code
+
+### Files Changed
+- `lib/models/capture.dart` - Updated documentation for lat/lon fields
+- `lib/pages/camera_page.dart` - Store only coarse geocell coordinates
+- `lib/pages/map_page.dart` - Aggregate markers and leader list UI
+- `lib/pages/leaderboard_page.dart` - New regional leaderboard page
+- `lib/services/leaderboard_service.dart` - New service for geocell aggregation
+- `lib/main.dart` - Added 4th navigation tab for leaderboards
+- `README.md` - Comprehensive feature and privacy documentation
+
+**Definition of Done:** ✅ Map shows aggregate markers by geocell; Clicking marker shows leader list; Regional leaderboard page displays rankings; Kids Mode hides all geographic data; All privacy requirements met; Documentation complete
 
 ---
 
 ## Summary
 
 **All 11 tasks are COMPLETE! ✅**
+copilot/add-geocell-map-and-leaderboards
+
+**All 10 original tasks + geocell enhancements are COMPLETE! ✅**
+
+**All 11 tasks (10 original + anti-cheat) are COMPLETE! ✅**
+ main
 
 The app is ready for development with the following capabilities:
 
@@ -421,6 +568,21 @@ The app is ready for development with the following capabilities:
 9. ✅ Retake prompt for quality control
 10. ✅ Comprehensive documentation
 11. ✅ **Daily/Weekly Quests, Streaks, and Achievements System**
+
+copilot/add-geocell-map-and-leaderboards
+7. ✅ Map with **aggregate geocell markers** and leader lists
+8. ✅ **Regional leaderboards** by card count and points
+9. ✅ Debug logging for field testing
+10. ✅ Retake prompt for quality control
+11. ✅ **Privacy-first geocell system** (no precise locations)
+12. ✅ Comprehensive documentation
+13. 
+14. ✅ Map with coarse location markers
+15. ✅ Debug logging for field testing
+16. ✅ Retake prompt for quality control
+17. ✅ Comprehensive documentation
+18. ✅ **Anti-cheat & validation system** with EXIF, duplicate detection, and liveness checks
+ main
 
 ### Next Steps for Users
 
