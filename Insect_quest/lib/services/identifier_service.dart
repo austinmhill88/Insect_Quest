@@ -231,9 +231,10 @@ class IdentifierService {
         return false;
       }
       
-      // Filter by group
-      if (suggestion.group != null) {
-        if (_unsafeGroupsForKids.any((unsafe) => suggestion.group!.contains(unsafe))) {
+      // Filter by group (null-safe)
+      final group = suggestion.group;
+      if (group != null) {
+        if (_unsafeGroupsForKids.any((unsafe) => group.contains(unsafe))) {
           return false;
         }
       }
@@ -243,7 +244,10 @@ class IdentifierService {
   }
 
   /// Get additional safe suggestions to ensure minimum count
-  List<GenusSuggestion> _getAdditionalSafeSuggestions(int startIndex, int count) {
+  /// 
+  /// Provides fallback genus suggestions that are safe for all users.
+  /// Checks for duplicates before adding.
+  List<GenusSuggestion> _getAdditionalSafeSuggestions(int currentCount, int needed) {
     final safeSuggestions = [
       GenusSuggestion(
         genus: 'Papilio',
@@ -271,7 +275,7 @@ class IdentifierService {
       ),
     ];
     
-    return safeSuggestions.skip(startIndex).take(count).toList();
+    return safeSuggestions.take(needed).toList();
   }
 
   /// Get species suggestions for a confirmed genus
