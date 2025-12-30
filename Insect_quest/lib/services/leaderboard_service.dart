@@ -39,16 +39,27 @@ class LeaderboardService {
   /// Gets sorted leaderboard entries by total points (descending).
   /// 
   /// Returns a list of geocell data sorted by points, useful for displaying
-  /// regional rankings.
+  /// regional rankings. Includes precomputed unique species count for efficiency.
   static List<Map<String, dynamic>> getSortedLeaderboard(List<Capture> captures) {
     final aggregated = aggregateByGeocell(captures);
     
     final entries = aggregated.entries.map((entry) {
+      final capturesList = List<Capture>.from(entry.value['captures']);
+      
+      // Precompute unique species count for efficiency
+      final uniqueSpecies = <String>{};
+      for (final c in capturesList) {
+        if (c.species != null) {
+          uniqueSpecies.add(c.species!);
+        }
+      }
+      
       return {
         'geocell': entry.key,
         'cardCount': entry.value['cardCount'],
         'totalPoints': entry.value['totalPoints'],
-        'captures': entry.value['captures'],
+        'captures': capturesList,
+        'uniqueSpecies': uniqueSpecies.length,
       };
     }).toList();
     
@@ -70,8 +81,8 @@ class LeaderboardService {
           'lon': double.parse(parts[1]),
         };
       }
-    } catch (e) {
-      // Invalid geocell format
+    } on FormatException {
+      // Invalid geocell format - return null
     }
     return null;
   }

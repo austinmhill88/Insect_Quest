@@ -152,6 +152,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         final cardCount = entry['cardCount'] as int;
         final totalPoints = entry['totalPoints'] as int;
         final captures = List<Capture>.from(entry['captures']);
+        final uniqueSpecies = entry['uniqueSpecies'] as int;
         
         // Medal icons for top 3
         IconData? medal;
@@ -190,7 +191,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               children: [
                 const SizedBox(height: 4),
                 Text('$cardCount card${cardCount == 1 ? '' : 's'}'),
-                Text('${_getTopSpecies(captures)} unique species'),
+                Text('$uniqueSpecies unique species'),
               ],
             ),
             trailing: Column(
@@ -219,16 +220,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         );
       },
     );
-  }
-  
-  int _getTopSpecies(List<Capture> captures) {
-    final species = <String>{};
-    for (final c in captures) {
-      if (c.species != null) {
-        species.add(c.species!);
-      }
-    }
-    return species.length;
   }
   
   void _showRegionDetails(String geocell, List<Capture> captures, int cardCount, int totalPoints) {

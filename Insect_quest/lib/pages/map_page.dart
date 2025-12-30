@@ -32,7 +32,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _loadMarkers() async {
-    // Kids Mode - do not show markers on map for privacy
+    // Kids Mode does not show markers on map for privacy
     if (kidsMode) {
       setState(() {
         markers = {};
