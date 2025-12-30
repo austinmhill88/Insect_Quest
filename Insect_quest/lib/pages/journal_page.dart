@@ -151,7 +151,7 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
           return Card(
             margin: const EdgeInsets.all(12),
             child: ListTile(
-              leading: Image.file(Uri.parse(c.photoPath).isAbsolute ? File(c.photoPath) : File(c.photoPath)),
+              leading: Image.file(File(c.photoPath)),
               title: Text(c.species ?? c.genus),
               subtitle: Text("${c.group} • ${c.tier} • ${c.points} pts • ${c.geocell}"),
               trailing: Wrap(

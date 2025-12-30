@@ -151,8 +151,15 @@ class _PinVerifyDialogState extends State<PinVerifyDialog> {
             obscureText: true,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            maxLength: 8,
             autofocus: true,
-            onSubmitted: (value) => Navigator.of(context).pop(value),
+            onSubmitted: (value) {
+              // Validate before submitting
+              if (value.trim().isEmpty) {
+                return;
+              }
+              Navigator.of(context).pop(value);
+            },
           ),
         ],
       ),
@@ -162,7 +169,13 @@ class _PinVerifyDialogState extends State<PinVerifyDialog> {
           child: const Text("Cancel"),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(_pinController.text),
+          onPressed: () {
+            final pin = _pinController.text.trim();
+            if (pin.isEmpty) {
+              return;
+            }
+            Navigator.of(context).pop(pin);
+          },
           child: const Text("Verify"),
         ),
       ],

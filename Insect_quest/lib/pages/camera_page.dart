@@ -302,11 +302,21 @@ class _CameraPageState extends State<CameraPage> {
       
       // Show quest completion notification with encouraging message
       if (completedQuests.isNotEmpty) {
-        final quest = completedQuests.first;
-        if (kidsMode) {
-          message = "🎉 Great job! You completed: ${quest.title}! (+${quest.rewardPoints} pts)";
+        if (completedQuests.length == 1) {
+          final quest = completedQuests.first;
+          if (kidsMode) {
+            message = "🎉 Great job! You completed: ${quest.title}! (+${quest.rewardPoints} pts)";
+          } else {
+            message += "\n✨ Quest completed: ${quest.title} (+${quest.rewardPoints} pts)";
+          }
         } else {
-          message += "\n✨ Quest completed: ${quest.title} (+${quest.rewardPoints} pts)";
+          // Multiple quests completed
+          final totalQuestPoints = completedQuests.fold<int>(0, (sum, q) => sum + q.rewardPoints);
+          if (kidsMode) {
+            message = "🎉 Amazing! You completed ${completedQuests.length} quests! (+$totalQuestPoints pts)";
+          } else {
+            message += "\n✨ ${completedQuests.length} quests completed! (+$totalQuestPoints pts)";
+          }
         }
       }
       

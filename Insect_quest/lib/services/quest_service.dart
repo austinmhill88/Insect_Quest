@@ -154,6 +154,8 @@ class QuestService {
           // Check group match if specified
           if (quest.id == "diversity_junior") {
             // Special case: count unique groups
+            // Note: Hard-coded quest ID is acceptable for MVP
+            // Future: Add quest.needsUniqueGroupCount() or similar method
             final uniqueGroups = allCaptures.map((c) => c.group).toSet();
             overrideCount = uniqueGroups.length;
           } else if (quest.targetGroup != null) {
@@ -186,6 +188,8 @@ class QuestService {
   }
 
   // Helper to load all captures (avoids circular dependency)
+  // Note: This duplicates JournalPage.loadCaptures() logic
+  // Future: Extract to a shared CaptureService
   static Future<List<Capture>> _loadAllCaptures() async {
     try {
       final sp = await SharedPreferences.getInstance();
