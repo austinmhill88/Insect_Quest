@@ -4,6 +4,7 @@ import 'journal_page.dart';
 import '../models/capture.dart';
 import '../services/settings_service.dart';
 import '../services/leaderboard_service.dart';
+import '../utils/ui_utils.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -138,7 +139,7 @@ class _MapPageState extends State<MapPage> {
                     final capture = captures[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: _getTierColor(capture.tier),
+                        backgroundColor: UIUtils.getTierColor(capture.tier),
                         child: Text(
                           '${index + 1}',
                           style: const TextStyle(
@@ -178,22 +179,6 @@ class _MapPageState extends State<MapPage> {
         ),
       ),
     );
-  }
-  
-  Color _getTierColor(String tier) {
-    switch (tier) {
-      case 'Legendary':
-        return Colors.purple;
-      case 'Epic':
-        return Colors.deepPurple;
-      case 'Rare':
-        return Colors.blue;
-      case 'Uncommon':
-        return Colors.green;
-      case 'Common':
-      default:
-        return Colors.grey;
-    }
   }
 
   @override

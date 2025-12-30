@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/capture.dart';
 import '../services/leaderboard_service.dart';
 import '../services/settings_service.dart';
+import '../utils/ui_utils.dart';
 import 'journal_page.dart';
 
 /// Regional Leaderboard Page
@@ -290,7 +291,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     final c = captures[i];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: _getTierColor(c.tier),
+                        backgroundColor: UIUtils.getTierColor(c.tier),
                         child: Text(
                           '${i + 1}',
                           style: const TextStyle(
@@ -331,21 +332,5 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         ),
       ),
     );
-  }
-  
-  Color _getTierColor(String tier) {
-    switch (tier) {
-      case 'Legendary':
-        return Colors.purple;
-      case 'Epic':
-        return Colors.deepPurple;
-      case 'Rare':
-        return Colors.blue;
-      case 'Uncommon':
-        return Colors.green;
-      case 'Common':
-      default:
-        return Colors.grey;
-    }
   }
 }

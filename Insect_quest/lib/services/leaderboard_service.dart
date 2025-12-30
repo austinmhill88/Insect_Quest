@@ -29,8 +29,8 @@ class LeaderboardService {
       }
       
       geocellMap[geocell]!['captures'].add(capture);
-      geocellMap[geocell]!['cardCount'] = (geocellMap[geocell]!['cardCount'] as int) + 1;
-      geocellMap[geocell]!['totalPoints'] = (geocellMap[geocell]!['totalPoints'] as int) + capture.points;
+      geocellMap[geocell]!['cardCount']++;
+      geocellMap[geocell]!['totalPoints'] += capture.points;
     }
     
     return geocellMap;
