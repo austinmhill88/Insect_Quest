@@ -88,15 +88,16 @@ class AchievementService {
         coinReward: 1000,
       ),
       
-      // Region/habitat achievements
-      Achievement(
-        id: "urban_explorer",
-        title: "Urban Explorer",
-        description: "Capture 20 insects in urban areas",
-        type: AchievementType.regionCompletion,
-        criteria: {"region": "urban", "count": 20},
-        coinReward: 300,
-      ),
+      // Note: Region/habitat achievements commented out until Capture model
+      // includes region/habitat data for proper implementation
+      // Achievement(
+      //   id: "urban_explorer",
+      //   title: "Urban Explorer",
+      //   description: "Capture 20 insects in urban areas",
+      //   type: AchievementType.regionCompletion,
+      //   criteria: {"region": "urban", "count": 20},
+      //   coinReward: 300,
+      // ),
     ];
   }
 

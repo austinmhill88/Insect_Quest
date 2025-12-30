@@ -8,6 +8,8 @@ import 'package:uuid/uuid.dart';
 import '../config/scoring.dart';
 import '../config/feature_flags.dart';
 import '../models/capture.dart';
+import '../models/quest.dart';
+import '../models/achievement.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
@@ -337,7 +339,7 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
   
-  void _showRewardsDialog(List<dynamic> completedQuests, List<dynamic> achievements) {
+  void _showRewardsDialog(List<Quest> completedQuests, List<Achievement> achievements) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
