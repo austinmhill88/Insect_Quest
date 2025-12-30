@@ -322,3 +322,40 @@ The following are noted in the docs but NOT implemented (as intended):
 - ❌ TestFlight
 
 These will be addressed in future iterations.
+
+---
+
+## ✅ Task 11: Critter Codex (Field Log) UI
+**Status:** COMPLETE
+
+- ✅ **Grid Layout** - 2-column card grid with responsive design
+- ✅ **Card Display** - Shows genus/species, rarity badge, photo, group, points, quality
+- ✅ **Rarity Badges** - Color-coded icons for Common, Uncommon, Rare, Epic, Legendary
+- ✅ **Special Badges** - State species star badge on cards
+- ✅ **Filtering System**:
+  - Search bar for genus/species name filtering
+  - Rarity filter with visual selection dialog
+  - Genus filter with alphabetical list
+  - Clear filters action chip
+- ✅ **Card Detail Page** - Full view with:
+  - Hero image with rarity border
+  - Stats (points, quality, genus, species)
+  - Location info (region, geocell, coordinates)
+  - Collection info (date/time, card ID)
+  - Traits (state species, invasive, venomous, distinctive)
+- ✅ **State Management** - Refresh button, pull-to-refresh, auto-refresh on return
+- ✅ **Navigation Integration** - Added as third tab (Codex) in bottom navigation
+- ✅ **Empty States** - Handles no captures and no filter matches
+- ✅ **Placeholder Assets** - Uses Material icons/colors for easy replacement
+
+**Files:**
+- `lib/pages/codex_page.dart` - Main grid view with filters
+- `lib/pages/card_detail_page.dart` - Detailed card view
+- `docs/CODEX_FEATURE.md` - Complete feature documentation
+
+**Dependencies:**
+- Added `intl: ^0.19.0` for date formatting
+
+**Definition of Done:** ✅ Users can browse collected cards in grid layout, apply filters by rarity/genus/search, view detailed card information, and experience smooth state updates when new cards are captured
+
+---
