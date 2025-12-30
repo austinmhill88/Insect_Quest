@@ -63,6 +63,11 @@ class _JournalPageState extends State<JournalPage> {
       appBar: AppBar(
         title: const Text('Journal'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events),
+            tooltip: 'Achievements',
+            onPressed: () => _showAchievementsDialog(),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: FilterChip(
@@ -110,17 +115,23 @@ class _JournalPageState extends State<JournalPage> {
                           '$coins',
                           color: Colors.amber,
                         ),
-                        _buildStatItem(
-                          Icons.local_fire_department,
-                          'Streak',
-                          '${streak.currentStreak}',
-                          color: Colors.orange,
+                        GestureDetector(
+                          onTap: () => _showStreakDetails(),
+                          child: _buildStatItem(
+                            Icons.local_fire_department,
+                            'Streak',
+                            '${streak.currentStreak}',
+                            color: Colors.orange,
+                          ),
                         ),
-                        _buildStatItem(
-                          Icons.emoji_events,
-                          'Achievements',
-                          '$unlockedAchievements/${achievements.length}',
-                          color: Colors.purple,
+                        GestureDetector(
+                          onTap: () => _showAchievementsDialog(),
+                          child: _buildStatItem(
+                            Icons.emoji_events,
+                            'Achievements',
+                            '$unlockedAchievements/${achievements.length}',
+                            color: Colors.purple,
+                          ),
                         ),
                       ],
                     ),
@@ -201,6 +212,114 @@ class _JournalPageState extends State<JournalPage> {
             color: Colors.grey[600],
           ),
         ),
+      ],
+    );
+  }
+
+  void _showAchievementsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🏆 Achievements'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: achievements.length,
+            itemBuilder: (context, index) {
+              final achievement = achievements[index];
+              return Card(
+                color: achievement.unlocked ? Colors.green[50] : Colors.grey[100],
+                child: ListTile(
+                  leading: Icon(
+                    achievement.unlocked ? Icons.check_circle : Icons.lock,
+                    color: achievement.unlocked ? Colors.green : Colors.grey,
+                  ),
+                  title: Text(
+                    achievement.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: achievement.unlocked ? null : TextDecoration.none,
+                      color: achievement.unlocked ? Colors.black : Colors.grey,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(achievement.description),
+                      if (achievement.unlocked && achievement.unlockedAt != null)
+                        Text(
+                          'Unlocked: ${_formatDate(achievement.unlockedAt!)}',
+                          style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic),
+                        ),
+                    ],
+                  ),
+                  trailing: achievement.coinReward > 0
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.monetization_on, size: 16, color: Colors.amber),
+                            Text('${achievement.coinReward}'),
+                          ],
+                        )
+                      : null,
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  void _showStreakDetails() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🔥 Streak Details'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildStreakRow('Current Streak', '${streak.currentStreak} days'),
+            const SizedBox(height: 8),
+            _buildStreakRow('Longest Streak', '${streak.longestStreak} days'),
+            const SizedBox(height: 8),
+            if (streak.lastActivityDate != null)
+              _buildStreakRow('Last Activity', _formatDate(streak.lastActivityDate!)),
+            const SizedBox(height: 16),
+            const Text(
+              'Keep capturing insects daily to maintain your streak!',
+              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStreakRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        Text(value, style: const TextStyle(fontSize: 16)),
       ],
     );
   }

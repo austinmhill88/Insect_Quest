@@ -128,6 +128,13 @@ class QuestService {
     final quests = await loadQuests();
     final completedQuests = <Quest>[];
 
+    // Get all captures to check unique groups for diversity quest
+    final sp = await SharedPreferences.getInstance();
+    final capturesStr = sp.getString("captures");
+    final List<dynamic> capturesJson = capturesStr != null ? jsonDecode(capturesStr) : [];
+    final allCaptures = capturesJson.map((e) => Capture.fromJson(Map<String, dynamic>.from(e))).toList();
+    final uniqueGroups = allCaptures.map((c) => c.group).toSet();
+
     for (var i = 0; i < quests.length; i++) {
       final quest = quests[i];
       if (quest.completed || quest.claimed) continue;
@@ -165,9 +172,14 @@ class QuestService {
           break;
 
         case QuestType.captureCount:
-          // This is handled differently - needs to count total captures
-          // For now, increment on any capture
-          quest.progress++;
+          final uniqueGroupsRequired = quest.requirements["uniqueGroups"] as bool? ?? false;
+          if (uniqueGroupsRequired) {
+            // For diversity quests, update progress based on unique groups count
+            quest.progress = uniqueGroups.length;
+          } else {
+            // For regular count quests, increment on any capture
+            quest.progress++;
+          }
           progressMade = true;
           break;
 
