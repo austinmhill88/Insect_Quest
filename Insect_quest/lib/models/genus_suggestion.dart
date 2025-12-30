@@ -20,12 +20,18 @@ class GenusSuggestion {
   /// Used for display and filtering
   final String? group;
 
+  /// Signal value used to indicate manual genus entry in dialogs
+  static const String manualEntrySignal = '__MANUAL_ENTRY__';
+
   GenusSuggestion({
     required this.genus,
     required this.confidence,
     this.commonName,
     this.group,
   });
+
+  /// Check if this is a manual entry signal
+  bool get isManualEntrySignal => genus == manualEntrySignal;
 
   Map<String, dynamic> toJson() => {
         "genus": genus,

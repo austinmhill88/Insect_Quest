@@ -231,12 +231,10 @@ class IdentifierService {
         return false;
       }
       
-      // Filter by group (null-safe)
+      // Filter by group (exact match for safety)
       final group = suggestion.group;
-      if (group != null) {
-        if (_unsafeGroupsForKids.any((unsafe) => group.contains(unsafe))) {
-          return false;
-        }
+      if (group != null && _unsafeGroupsForKids.contains(group)) {
+        return false;
       }
       
       return true;

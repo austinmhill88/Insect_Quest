@@ -297,7 +297,7 @@ class _CameraPageState extends State<CameraPage> {
   Future<GenusSuggestion?> _showGenusSuggestionsDialog(List<GenusSuggestion> suggestions) async {
     // Signal value for manual entry
     final manualEntrySignal = GenusSuggestion(
-      genus: '__MANUAL_ENTRY__',
+      genus: GenusSuggestion.manualEntrySignal,
       confidence: 0.0,
     );
     
@@ -357,7 +357,7 @@ class _CameraPageState extends State<CameraPage> {
     );
     
     // If user chose manual entry, show manual input dialog
-    if (result != null && result.genus == '__MANUAL_ENTRY__') {
+    if (result != null && result.isManualEntrySignal) {
       return await _showManualGenusInputDialog();
     }
     
