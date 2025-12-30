@@ -8,7 +8,8 @@ import 'package:uuid/uuid.dart';
 import '../config/scoring.dart';
 import '../config/feature_flags.dart';
 import '../models/capture.dart';
-import '../services/ml_stub.dart';
+import '../models/genus_suggestion.dart';
+import '../services/identifier_service.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
 import 'journal_page.dart';
@@ -24,13 +25,13 @@ class _CameraPageState extends State<CameraPage> {
   CameraController? controller;
   List<CameraDescription>? cameras;
   bool ready = false;
-  late final MLService ml;
+  late final IdentifierService identifier;
   bool kidsMode = Flags.kidsModeDefault;
 
   @override
   void initState() {
     super.initState();
-    ml = MLService(catalogService: widget.catalogService);
+    identifier = IdentifierService(catalogService: widget.catalogService);
     _init();
     _loadKidsMode();
   }
@@ -168,41 +169,34 @@ class _CameraPageState extends State<CameraPage> {
     final lon = pos.longitude;
     final geocell = _geocell(lat, lon);
 
-    // Identification stub
-    final analysis = await ml.analyze(imagePath: file.path, lat: lat, lon: lon);
-    final genus = analysis["genus"] as String;
-    final candidates = List<Map<String, dynamic>>.from(analysis["species_candidates"]);
+    // Genus-first identification
+    final genusSuggestions = await identifier.identifyGenus(
+      imagePath: file.path,
+      lat: lat,
+      lon: lon,
+      kidsMode: kidsMode,
+    );
 
-    // Build selection UI
+    if (!mounted) return;
+
+    // Step 1: Show genus suggestions (3-5 options)
+    final selectedGenus = await _showGenusSuggestionsDialog(genusSuggestions);
+    if (selectedGenus == null) {
+      // User cancelled
+      return;
+    }
+
+    // Step 2: Allow user to optionally specify species or keep genus-only
+    String genus = selectedGenus.genus;
     String? species;
     bool speciesConfirmed = false;
-    if (candidates.isNotEmpty) {
-      final choice = await showDialog<String>(
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            title: const Text("Species suggestion"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: candidates
-                  .map((c) => ListTile(
-                        title: Text("${c["species"]}"),
-                        subtitle: Text("Confidence ${(c["confidence"] as double).toStringAsFixed(2)}"),
-                        onTap: () => Navigator.pop(ctx, c["species"]),
-                      ))
-                  .toList()
-                ..add(ListTile(
-                  title: const Text("Keep genus-only"),
-                  onTap: () => Navigator.pop(ctx, null),
-                )),
-            ),
-          );
-        },
-      );
-      if (choice != null) {
-        species = choice;
-        speciesConfirmed = true;
-      }
+
+    if (!mounted) return;
+    
+    final speciesChoice = await _showSpeciesInputDialog(genus);
+    if (speciesChoice != null && speciesChoice.isNotEmpty) {
+      species = speciesChoice;
+      speciesConfirmed = true;
     }
 
     // Determine group/tier/flags from catalog
@@ -294,6 +288,191 @@ class _CameraPageState extends State<CameraPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Saved capture (+$pts pts)")));
     }
+  }
+
+  /// Show genus suggestions dialog
+  /// 
+  /// Displays 3-5 genus suggestions from the identifier service.
+  /// User can select a genus, manually enter one, or cancel.
+  Future<GenusSuggestion?> _showGenusSuggestionsDialog(List<GenusSuggestion> suggestions) async {
+    return showDialog<GenusSuggestion>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("What did you find?"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Select the genus that best matches your observation:",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                ...suggestions.map((suggestion) => ListTile(
+                      title: Text(
+                        suggestion.genus,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (suggestion.commonName != null)
+                            Text(suggestion.commonName!),
+                          Text(
+                            "Confidence: ${(suggestion.confidence * 100).toStringAsFixed(0)}%",
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      leading: CircleAvatar(
+                        child: Text("${(suggestion.confidence * 100).toInt()}"),
+                      ),
+                      onTap: () => Navigator.pop(ctx, suggestion),
+                    )),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text("Enter genus manually"),
+                  onTap: () async {
+                    Navigator.pop(ctx); // Close this dialog
+                    final manual = await _showManualGenusInputDialog();
+                    if (manual != null) {
+                      Navigator.of(context).pop(manual);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Show manual genus input dialog
+  Future<GenusSuggestion?> _showManualGenusInputDialog() async {
+    final controller = TextEditingController();
+    return showDialog<GenusSuggestion>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("Enter Genus"),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: "Genus name",
+              hintText: "e.g., Papilio",
+            ),
+            textCapitalization: TextCapitalization.words,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                final genus = controller.text.trim();
+                if (genus.isNotEmpty) {
+                  Navigator.pop(
+                    ctx,
+                    GenusSuggestion(
+                      genus: genus,
+                      confidence: 1.0, // User override
+                      commonName: null,
+                      group: null,
+                    ),
+                  );
+                }
+              },
+              child: const Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Show species input dialog
+  /// 
+  /// Allows user to optionally specify species or keep genus-only.
+  /// Shows species suggestions if available in catalog for the genus.
+  Future<String?> _showSpeciesInputDialog(String genus) async {
+    // Get species suggestions for this genus from catalog
+    final speciesSuggestions = identifier.getSpeciesSuggestionsForGenus(genus);
+    
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final manualController = TextEditingController();
+        return AlertDialog(
+          title: Text("Species for $genus?"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "You can specify the species or keep genus-only:",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.check_circle_outline),
+                  title: const Text("Keep genus-only"),
+                  subtitle: Text("Save as $genus"),
+                  onTap: () => Navigator.pop(ctx, null),
+                ),
+                if (speciesSuggestions.isNotEmpty) ...[
+                  const Divider(),
+                  const Text(
+                    "Or select a known species:",
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  ...speciesSuggestions.map((species) => ListTile(
+                        title: Text(species),
+                        onTap: () => Navigator.pop(ctx, species),
+                      )),
+                ],
+                const Divider(),
+                TextField(
+                  controller: manualController,
+                  decoration: const InputDecoration(
+                    labelText: "Or enter species manually",
+                    hintText: "e.g., Papilio glaucus",
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: const Text("Keep genus-only"),
+            ),
+            TextButton(
+              onPressed: () {
+                final species = manualController.text.trim();
+                if (species.isNotEmpty) {
+                  Navigator.pop(ctx, species);
+                }
+              },
+              child: const Text("Confirm species"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
