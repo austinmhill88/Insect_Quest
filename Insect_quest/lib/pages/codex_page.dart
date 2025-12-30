@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/capture.dart';
 import '../pages/journal_page.dart';
+import '../utils/rarity_utils.dart';
 import 'card_detail_page.dart';
 
 class CodexPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
   String? selectedRarity;
   String? selectedGenus;
   String searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   bool get wantKeepAlive => true;
@@ -27,6 +29,12 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
   void initState() {
     super.initState();
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -60,40 +68,6 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
     }).toList();
     
     setState(() {});
-  }
-
-  Color _getRarityColor(String tier) {
-    switch (tier) {
-      case 'Common':
-        return Colors.grey;
-      case 'Uncommon':
-        return Colors.green;
-      case 'Rare':
-        return Colors.blue;
-      case 'Epic':
-        return Colors.purple;
-      case 'Legendary':
-        return Colors.amber;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getRarityIcon(String tier) {
-    switch (tier) {
-      case 'Common':
-        return Icons.circle;
-      case 'Uncommon':
-        return Icons.album;
-      case 'Rare':
-        return Icons.hexagon;
-      case 'Epic':
-        return Icons.stars;
-      case 'Legendary':
-        return Icons.auto_awesome;
-      default:
-        return Icons.circle;
-    }
   }
 
   List<String> _getUniqueRarities() {
@@ -132,6 +106,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
                     prefixIcon: Icon(Icons.search),
                     border: OutlineInputBorder(),
                   ),
+                  controller: _searchController,
                   onChanged: (value) {
                     searchQuery = value;
                     _applyFilters();
@@ -165,8 +140,8 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
                                   ),
                                   ..._getUniqueRarities().map((rarity) => ListTile(
                                     leading: Icon(
-                                      _getRarityIcon(rarity),
-                                      color: _getRarityColor(rarity),
+                                      RarityUtils.getRarityIcon(rarity),
+                                      color: RarityUtils.getRarityColor(rarity),
                                     ),
                                     title: Text(rarity),
                                     onTap: () {
@@ -229,6 +204,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
                               selectedRarity = null;
                               selectedGenus = null;
                               searchQuery = '';
+                              _searchController.clear();
                             });
                             _applyFilters();
                           },
@@ -376,7 +352,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: _getRarityColor(capture.tier),
+                        color: RarityUtils.getRarityColor(capture.tier),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -387,7 +363,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
                         ],
                       ),
                       child: Icon(
-                        _getRarityIcon(capture.tier),
+                        RarityUtils.getRarityIcon(capture.tier),
                         color: Colors.white,
                         size: 20,
                       ),
@@ -424,7 +400,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
             // Card footer with points
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              color: _getRarityColor(capture.tier).withOpacity(0.2),
+              color: RarityUtils.getRarityColor(capture.tier).withOpacity(0.2),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -432,7 +408,7 @@ class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixi
                     '${capture.points} pts',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: _getRarityColor(capture.tier).withOpacity(0.9),
+                      color: RarityUtils.getRarityColor(capture.tier).withOpacity(0.9),
                       fontSize: 12,
                     ),
                   ),

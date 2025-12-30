@@ -2,49 +2,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/capture.dart';
+import '../utils/rarity_utils.dart';
 
 class CardDetailPage extends StatelessWidget {
   final Capture capture;
 
   const CardDetailPage({super.key, required this.capture});
 
-  Color _getRarityColor(String tier) {
-    switch (tier) {
-      case 'Common':
-        return Colors.grey;
-      case 'Uncommon':
-        return Colors.green;
-      case 'Rare':
-        return Colors.blue;
-      case 'Epic':
-        return Colors.purple;
-      case 'Legendary':
-        return Colors.amber;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getRarityIcon(String tier) {
-    switch (tier) {
-      case 'Common':
-        return Icons.circle;
-      case 'Uncommon':
-        return Icons.album;
-      case 'Rare':
-        return Icons.hexagon;
-      case 'Epic':
-        return Icons.stars;
-      case 'Legendary':
-        return Icons.auto_awesome;
-      default:
-        return Icons.circle;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final rarityColor = _getRarityColor(capture.tier);
+    final rarityColor = RarityUtils.getRarityColor(capture.tier);
     
     return Scaffold(
       appBar: AppBar(
@@ -99,7 +66,7 @@ class CardDetailPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _getRarityIcon(capture.tier),
+                            RarityUtils.getRarityIcon(capture.tier),
                             color: Colors.white,
                             size: 20,
                           ),
