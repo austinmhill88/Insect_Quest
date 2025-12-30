@@ -295,7 +295,7 @@ class _CameraPageState extends State<CameraPage> {
   /// Displays 3-5 genus suggestions from the identifier service.
   /// User can select a genus, manually enter one, or cancel.
   Future<GenusSuggestion?> _showGenusSuggestionsDialog(List<GenusSuggestion> suggestions) async {
-    return showDialog<GenusSuggestion>(
+    final result = await showDialog<GenusSuggestion>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
@@ -335,13 +335,7 @@ class _CameraPageState extends State<CameraPage> {
                 ListTile(
                   leading: const Icon(Icons.edit),
                   title: const Text("Enter genus manually"),
-                  onTap: () async {
-                    Navigator.pop(ctx); // Close this dialog
-                    final manual = await _showManualGenusInputDialog();
-                    if (manual != null) {
-                      Navigator.of(context).pop(manual);
-                    }
-                  },
+                  onTap: () => Navigator.pop(ctx, 'manual'), // Signal manual entry
                 ),
               ],
             ),
@@ -355,6 +349,13 @@ class _CameraPageState extends State<CameraPage> {
         );
       },
     );
+    
+    // If user chose manual entry, show manual input dialog
+    if (result == 'manual' as Object?) {
+      return await _showManualGenusInputDialog();
+    }
+    
+    return result;
   }
 
   /// Show manual genus input dialog

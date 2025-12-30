@@ -232,9 +232,10 @@ class IdentifierService {
       }
       
       // Filter by group
-      if (suggestion.group != null && 
-          _unsafeGroupsForKids.any((unsafe) => suggestion.group!.contains(unsafe))) {
-        return false;
+      if (suggestion.group != null) {
+        if (_unsafeGroupsForKids.any((unsafe) => suggestion.group!.contains(unsafe))) {
+          return false;
+        }
       }
       
       return true;
