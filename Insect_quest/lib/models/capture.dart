@@ -12,6 +12,7 @@ class Capture {
   final Map<String, bool> flags; // state_species, invasive, venomous
   final int points;
   final double quality;
+  final int coins; // Coins awarded for this capture
   final String? validationStatus; // "valid", "flagged", "rejected"
   final String? photoHash; // perceptual hash for duplicate detection
   final bool hasExif; // whether photo has valid EXIF data
@@ -31,6 +32,7 @@ class Capture {
     required this.flags,
     required this.points,
     required this.quality,
+    required this.coins,
     this.validationStatus,
     this.photoHash,
     this.hasExif = true,
@@ -51,6 +53,7 @@ class Capture {
         "flags": flags,
         "points": points,
         "quality": quality,
+        "coins": coins,
         "validationStatus": validationStatus,
         "photoHash": photoHash,
         "hasExif": hasExif,
@@ -71,6 +74,7 @@ class Capture {
         flags: Map<String, bool>.from(m["flags"] ?? {}),
         points: m["points"],
         quality: m["quality"],
+        coins: m["coins"] ?? 0, // Default to 0 for backward compatibility
         validationStatus: m["validationStatus"],
         photoHash: m["photoHash"],
         hasExif: m["hasExif"] ?? true,

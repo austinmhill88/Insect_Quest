@@ -13,6 +13,8 @@ import '../models/quality_metrics.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../services/firestore_service.dart';
+import '../services/user_service.dart';
 import '../widgets/camera_overlay.dart';
 import '../models/arthropod_card.dart';
 import '../services/ml_stub.dart';
@@ -339,6 +341,15 @@ class _CameraPageState extends State<CameraPage> {
       firstGenus: false, // MVP: no novelty tracking
     );
 
+    // Calculate coins awarded for minting this card
+    final coinsAwarded = Scoring.coins(
+      tier: pointsTier,
+      qualityMult: qMult,
+    ).clamp(0, 10000); // Validate reasonable bounds (0-10k coins per capture)
+
+    debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
+    debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
+    debugPrint("Points: $pts, Coins: $coinsAwarded");
     debugPrint("Quality: ${metrics.toString()} qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
     debugPrint("Points: $pts");
@@ -366,6 +377,7 @@ class _CameraPageState extends State<CameraPage> {
       flags: flags,
       points: pts,
       quality: qMult,
+      coins: coinsAwarded,
       validationStatus: validationResult['validationStatus'],
       photoHash: validationResult['photoHash'],
       hasExif: validationResult['hasExif'],
@@ -388,6 +400,21 @@ class _CameraPageState extends State<CameraPage> {
 
     // Save capture and card
     await JournalPage.saveCapture(cap);
+
+    // Award coins and sync to Firestore
+    try {
+      final userId = await UserService.getUserId();
+      final firestoreService = FirestoreService();
+      await firestoreService.addCoins(userId, coinsAwarded);
+    } catch (e) {
+      debugPrint("Error syncing coins to Firestore: $e");
+      // Continue even if Firestore sync fails (coins are still tracked locally)
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Saved capture (+$pts pts, +$coinsAwarded coins)")),
+      );
     await CardService.saveCard(card);
 
     debugPrint("Card minted: rarity=${card.rarity} foil=${card.foil} traits=${card.traits}");
