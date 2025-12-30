@@ -8,6 +8,11 @@ import 'package:uuid/uuid.dart';
 import '../config/scoring.dart';
 import '../config/feature_flags.dart';
 import '../models/capture.dart';
+import '../models/arthropod_card.dart';
+import '../services/ml_stub.dart';
+import '../services/catalog_service.dart';
+import '../services/settings_service.dart';
+import '../services/card_service.dart';
 import '../models/quest.dart';
 import '../models/achievement.dart';
 import '../services/ml_stub.dart';
@@ -383,10 +388,17 @@ class _CameraPageState extends State<CameraPage> {
     debugPrint("Points: $pts");
     debugPrint("Anti-cheat: status=${validationResult['validationStatus']} hash=${validationResult['photoHash']} hasExif=${validationResult['hasExif']} liveness=$livenessVerified");
 
+    final captureId = const Uuid().v4();
+    final captureTimestamp = DateTime.now();
+
+    // Build capture
     // Build capture (only coarse geocell coordinates saved, not precise location)
     final cap = Capture(
-      id: const Uuid().v4(),
+      id: captureId,
       photoPath: file.path,
+      timestamp: captureTimestamp,
+      lat: lat,
+      lon: lon,
       timestamp: DateTime.now(),
       lat: coarseLat,  // Coarse coordinate from geocell
       lon: coarseLon,  // Coarse coordinate from geocell
@@ -404,8 +416,33 @@ class _CameraPageState extends State<CameraPage> {
       livenessVerified: livenessVerified,
     );
 
-    // Save and navigate to Journal
+    // Mint collectible card
+    final card = CardService.mintCard(
+      id: captureId,
+      userId: "local_user", // MVP: use placeholder user ID
+      genus: genus,
+      species: species,
+      tier: tier,
+      quality: qMult,
+      timestamp: captureTimestamp,
+      geocell: geocell,
+      photoPath: file.path,
+      flags: flags,
+    );
+
+    // Save capture and card
     await JournalPage.saveCapture(cap);
+    await CardService.saveCard(card);
+
+    debugPrint("Card minted: rarity=${card.rarity} foil=${card.foil} traits=${card.traits}");
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Saved capture (+$pts pts) • ${card.rarity} card minted!"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     
     // Check and update quest progress
     final completedQuests = await QuestService.updateProgressForCapture(cap, kidsMode);
