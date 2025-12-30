@@ -31,6 +31,10 @@ class SettingsService {
   static Future<bool> verifyPin(String pin) async {
     final sp = await SharedPreferences.getInstance();
     final storedPin = sp.getString(_pinKey);
+    // Ensure PIN is actually set up before comparing
+    if (storedPin == null || storedPin.isEmpty) {
+      return false;
+    }
     return storedPin == pin;
   }
 

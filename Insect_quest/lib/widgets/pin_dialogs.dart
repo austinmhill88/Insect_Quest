@@ -34,6 +34,11 @@ class _PinSetupDialogState extends State<PinSetupDialog> {
       return;
     }
 
+    if (pin.length > 8) {
+      setState(() => _error = "PIN must be at most 8 digits");
+      return;
+    }
+
     if (pin != confirm) {
       setState(() => _error = "PINs do not match");
       return;

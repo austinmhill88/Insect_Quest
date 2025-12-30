@@ -132,6 +132,9 @@ class QuestService {
     final availableQuests = getAvailableQuests(kidsMode);
     final completedQuests = <Quest>[];
 
+    // Load all captures to count unique groups for diversity quest
+    final allCaptures = await _loadAllCaptures();
+
     for (final quest in availableQuests) {
       final questProgress = progress[quest.id] ??
           QuestProgress(questId: quest.id);
@@ -139,6 +142,7 @@ class QuestService {
       if (questProgress.completed) continue;
 
       bool shouldIncrement = false;
+      int? overrideCount;
 
       switch (quest.category) {
         case "collection":
@@ -148,7 +152,11 @@ class QuestService {
         case "learning":
         case "exploration":
           // Check group match if specified
-          if (quest.targetGroup != null) {
+          if (quest.id == "diversity_junior") {
+            // Special case: count unique groups
+            final uniqueGroups = allCaptures.map((c) => c.group).toSet();
+            overrideCount = uniqueGroups.length;
+          } else if (quest.targetGroup != null) {
             shouldIncrement = capture.group == quest.targetGroup;
           } else if (quest.id == "state_species_hunter") {
             shouldIncrement = capture.flags["state_species"] == true;
@@ -158,38 +166,36 @@ class QuestService {
           break;
       }
 
-      if (shouldIncrement) {
+      if (overrideCount != null) {
+        questProgress.currentCount = overrideCount;
+      } else if (shouldIncrement) {
         questProgress.currentCount++;
-        
-        if (questProgress.currentCount >= quest.targetCount) {
-          questProgress.completed = true;
-          questProgress.completedAt = DateTime.now();
-          completedQuests.add(quest);
-        }
-
-        progress[quest.id] = questProgress;
       }
-    }
-
-    // Special handling for diversity quest
-    final diversityQuest = availableQuests.firstWhere(
-      (q) => q.id == "diversity_junior",
-      orElse: () => availableQuests.first,
-    );
-    if (diversityQuest.id == "diversity_junior") {
-      final diversityProgress = progress[diversityQuest.id] ??
-          QuestProgress(questId: diversityQuest.id);
       
-      if (!diversityProgress.completed) {
-        // Count unique groups from all captures
-        // This is a simplified check; in real implementation would query all captures
-        diversityProgress.currentCount = 1; // Placeholder
-        progress[diversityQuest.id] = diversityProgress;
+      if (questProgress.currentCount >= quest.targetCount) {
+        questProgress.completed = true;
+        questProgress.completedAt = DateTime.now();
+        completedQuests.add(quest);
       }
+
+      progress[quest.id] = questProgress;
     }
 
     await saveProgress(progress);
     return completedQuests;
+  }
+
+  // Helper to load all captures (avoids circular dependency)
+  static Future<List<Capture>> _loadAllCaptures() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final txt = sp.getString("captures");
+      if (txt == null) return [];
+      final arr = jsonDecode(txt) as List<dynamic>;
+      return arr.map((e) => Capture.fromJson(Map<String, dynamic>.from(e))).toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   // Get progress for a specific quest
