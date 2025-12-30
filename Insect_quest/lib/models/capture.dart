@@ -2,9 +2,9 @@ class Capture {
   final String id;
   final String photoPath;
   final DateTime timestamp;
-  final double lat;
-  final double lon;
-  final String geocell; // coarse location string
+  final double lat; // Coarse latitude from geocell (0.01° precision)
+  final double lon; // Coarse longitude from geocell (0.01° precision)
+  final String geocell; // coarse location string (e.g., "34.00,-84.00")
   final String group;   // e.g., Butterflies
   final String genus;
   final String? species;

@@ -11,11 +11,13 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - 📊 Photo quality multiplier (0.85-1.15x)
 - 📝 Journal with persistent capture history
 - 🗺️ Map with coarse location markers (~1km geocells)
+- 🏆 Regional leaderboards by card count and points
 - 👶 Kids Mode with enhanced safety features
 
 🎯 **Kids Mode Benefits:**
 - Quality floor locked at 0.9 minimum
 - Map markers hidden for privacy
+- Leaderboards hidden for privacy
 - Safety tips banner when encountering spiders
 - Toggle available on Camera and Journal pages
 
@@ -118,12 +120,14 @@ Insect_quest/
 │   │   └── capture.dart          # Capture data model with JSON serialization
 │   ├── pages/
 │   │   ├── camera_page.dart      # Camera preview, capture, and quality analysis
-│   │   ├── map_page.dart         # Google Maps with coarse location markers
-│   │   └── journal_page.dart     # List of captures with stats and flags
+│   │   ├── map_page.dart         # Google Maps with aggregate geocell markers
+│   │   ├── journal_page.dart     # List of captures with stats and flags
+│   │   └── leaderboard_page.dart # Regional leaderboard by card count and points
 │   ├── services/
 │   │   ├── catalog_service.dart  # Species catalog loader and lookup
 │   │   ├── ml_stub.dart          # Identification stub (heuristic-based)
-│   │   └── settings_service.dart # Persistent settings (Kids Mode)
+│   │   ├── settings_service.dart # Persistent settings (Kids Mode)
+│   │   └── leaderboard_service.dart # Geocell aggregation and statistics
 │   └── assets/
 │       └── catalogs/
 │           └── species_catalog_ga.json  # North Georgia species catalog
@@ -155,9 +159,20 @@ Insect_quest/
 ### Viewing the Map
 
 1. **Navigate to the Map Tab** (map icon)
-2. **View markers** at coarse locations (~1km accuracy)
-3. **Tap markers** to see species/genus and points
-4. **Kids Mode**: Map markers are hidden for privacy
+2. **View aggregate markers** at coarse locations (~1km geocells)
+3. **Each marker shows** total card count for that region
+4. **Tap markers** to see the leader list for that geocell
+5. **Bottom sheet displays** all captures in that region, sorted by points
+6. **Kids Mode**: Map markers are hidden for privacy
+
+### Checking Regional Leaderboards
+
+1. **Navigate to the Leaders Tab** (trophy icon)
+2. **View regions ranked** by total points earned
+3. **Top 3 regions** get medal badges (gold, silver, bronze)
+4. **Each entry shows** card count, unique species, and total points
+5. **Tap any region** to see detailed capture list
+6. **Kids Mode**: Leaderboards are hidden for privacy
 
 ### Reviewing Your Journal
 
@@ -242,13 +257,27 @@ Base Points × Rarity Multiplier × Quality Multiplier [× 1.30 if species confi
 - Epic: 180 base, 4.0x multiplier
 - Legendary: 250 base, 6.0x multiplier
 
-### Coarse Location
+### Coarse Location & Geocells
+
+**Privacy-First Design:** No precise locations are stored or displayed. All location data uses coarse geocells.
 
 Coordinates are rounded to 0.01° (~1km) for privacy:
 ```dart
 latRounded = (lat * 100).round() / 100.0
 lonRounded = (lon * 100).round() / 100.0
+geocell = "34.00,-84.00" // String key format
 ```
+
+**Geocell Features:**
+- Each geocell represents approximately 1 km² area
+- Map markers aggregate all captures within the same geocell
+- Leaderboards rank regions by geocell performance
+- Kids Mode further restricts visibility of all geocell data
+
+**Database Storage:**
+- Only geocell string keys are stored (e.g., "34.00,-84.00")
+- Original precise lat/lon coordinates are NOT persisted
+- All map and leaderboard logic uses geocell aggregation
 
 ## Future Enhancements (Post-MVP)
 
