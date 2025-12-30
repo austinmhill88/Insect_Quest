@@ -274,7 +274,7 @@ class _CameraPageState extends State<CameraPage> {
     final coinsAwarded = Scoring.coins(
       tier: pointsTier,
       qualityMult: qMult,
-    );
+    ).clamp(0, 10000); // Validate reasonable bounds (0-10k coins per capture)
 
     debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");

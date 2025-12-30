@@ -131,8 +131,8 @@ class FirestoreService {
 
     // Transfer coins and complete trade
     await _firestore.runTransaction((transaction) async {
-      // Transfer coins from offering user to accepting user
-      if (trade.coinsOffered > 0 && trade.acceptedByUserId != null) {
+      // Transfer coins between users
+      if (trade.acceptedByUserId != null) {
         final offeringUserDoc = _firestore.collection(_usersCollection).doc(trade.offeredByUserId);
         final acceptingUserDoc = _firestore.collection(_usersCollection).doc(trade.acceptedByUserId!);
 
@@ -142,11 +142,13 @@ class FirestoreService {
         final offeringUserCoins = offeringUserSnapshot.data()?['coins'] ?? 0;
         final acceptingUserCoins = acceptingUserSnapshot.data()?['coins'] ?? 0;
 
+        // Offering user pays coinsOffered and receives coinsRequested
         transaction.update(offeringUserDoc, {
           'coins': offeringUserCoins - trade.coinsOffered + trade.coinsRequested,
           'lastUpdated': DateTime.now().toIso8601String(),
         });
 
+        // Accepting user receives coinsOffered (coinsRequested already deducted in escrow)
         transaction.update(acceptingUserDoc, {
           'coins': acceptingUserCoins + trade.coinsOffered,
           'lastUpdated': DateTime.now().toIso8601String(),

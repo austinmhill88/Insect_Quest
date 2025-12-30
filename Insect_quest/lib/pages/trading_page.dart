@@ -135,7 +135,7 @@ class _TradingPageState extends State<TradingPage> {
                       }
 
                       final trade = Trade(
-                        id: const Uuid().v4(),
+                        id: '', // Firestore will generate the ID
                         offeredCaptureId: selectedCapture!.id,
                         offeredByUserId: userId,
                         coinsOffered: coinsOffered,
