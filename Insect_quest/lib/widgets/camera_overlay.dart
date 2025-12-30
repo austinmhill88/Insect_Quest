@@ -99,7 +99,7 @@ class _MacroTipsCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lightbulb_outline, color: Colors.amber[300], size: 20),
+          Icon(Icons.lightbulb_outline, color: Colors.amber.shade300, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -119,6 +119,8 @@ class _MacroTipsCard extends StatelessWidget {
 
 /// Kids Mode safety banner overlay
 class KidsModeBanner extends StatelessWidget {
+  static const double _bannerOpacity = 0.95;
+  
   const KidsModeBanner({super.key});
 
   @override
@@ -131,7 +133,10 @@ class KidsModeBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[700]!.withOpacity(0.9), Colors.blue[800]!.withOpacity(0.9)],
+            colors: [
+              Colors.blue.shade700.withOpacity(0.9),
+              Colors.blue.shade800.withOpacity(0.9),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -140,13 +145,13 @@ class KidsModeBanner extends StatelessWidget {
           bottom: false,
           child: Row(
             children: [
-              Icon(Icons.child_care, color: Colors.white.withOpacity(0.95), size: 22),
+              Icon(Icons.child_care, color: Colors.white.withOpacity(_bannerOpacity), size: 22),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Kids Mode Active • Safety features enabled',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withOpacity(_bannerOpacity),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
