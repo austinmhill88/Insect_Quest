@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'pages/camera_page.dart';
 import 'pages/map_page.dart';
 import 'pages/journal_page.dart';
+import 'pages/codex_page.dart';
 import 'services/catalog_service.dart';
 import 'config/feature_flags.dart';
 
@@ -43,6 +44,7 @@ class _HomeNavState extends State<HomeNav> {
     pages = [
       CameraPage(catalogService: widget.catalogService),
       const MapPage(),
+      const CodexPage(),
       const JournalPage(),
     ];
     super.initState();
@@ -57,6 +59,7 @@ class _HomeNavState extends State<HomeNav> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.camera_alt), label: 'Capture'),
           NavigationDestination(icon: Icon(Icons.map), label: 'Map'),
+          NavigationDestination(icon: Icon(Icons.catching_pokemon), label: 'Codex'),
           NavigationDestination(icon: Icon(Icons.book), label: 'Journal'),
         ],
         onDestinationSelected: (i) => setState(() => index = i),
