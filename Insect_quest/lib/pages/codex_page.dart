@@ -11,7 +11,7 @@ class CodexPage extends StatefulWidget {
   State<CodexPage> createState() => _CodexPageState();
 }
 
-class _CodexPageState extends State<CodexPage> {
+class _CodexPageState extends State<CodexPage> with AutomaticKeepAliveClientMixin {
   List<Capture> captures = [];
   List<Capture> filteredCaptures = [];
   
@@ -19,6 +19,9 @@ class _CodexPageState extends State<CodexPage> {
   String? selectedRarity;
   String? selectedGenus;
   String searchQuery = '';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -103,6 +106,7 @@ class _CodexPageState extends State<CodexPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       appBar: AppBar(
         title: const Text('Critter Codex'),
