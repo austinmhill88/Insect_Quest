@@ -35,4 +35,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/catalogs/species_catalog_ga.json
+    - assets/icons/
     - assets/images/cards/card_frame_placeholder.png
