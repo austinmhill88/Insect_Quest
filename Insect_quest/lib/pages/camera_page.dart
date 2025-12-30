@@ -8,9 +8,11 @@ import 'package:uuid/uuid.dart';
 import '../config/scoring.dart';
 import '../config/feature_flags.dart';
 import '../models/capture.dart';
+import '../models/arthropod_card.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../services/card_service.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -272,11 +274,14 @@ class _CameraPageState extends State<CameraPage> {
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
     debugPrint("Points: $pts");
 
+    final captureId = const Uuid().v4();
+    final captureTimestamp = DateTime.now();
+
     // Build capture
     final cap = Capture(
-      id: const Uuid().v4(),
+      id: captureId,
       photoPath: file.path,
-      timestamp: DateTime.now(),
+      timestamp: captureTimestamp,
       lat: lat,
       lon: lon,
       geocell: geocell,
@@ -289,10 +294,33 @@ class _CameraPageState extends State<CameraPage> {
       quality: qMult,
     );
 
-    // Save and navigate to Journal
+    // Mint collectible card
+    final card = CardService.mintCard(
+      id: captureId,
+      userId: "local_user", // MVP: use placeholder user ID
+      genus: genus,
+      species: species,
+      tier: tier,
+      quality: qMult,
+      timestamp: captureTimestamp,
+      geocell: geocell,
+      photoPath: file.path,
+      flags: flags,
+    );
+
+    // Save capture and card
     await JournalPage.saveCapture(cap);
+    await CardService.saveCard(card);
+
+    debugPrint("Card minted: rarity=${card.rarity} foil=${card.foil} traits=${card.traits}");
+
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Saved capture (+$pts pts)")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Saved capture (+$pts pts) • ${card.rarity} card minted!"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
