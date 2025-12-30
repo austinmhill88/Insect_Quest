@@ -84,6 +84,8 @@ class QualityMetrics {
   }
 
   /// Check if quality meets minimum threshold
+  /// Note: Only checks sharpness and framing as these are critical for clear photos.
+  /// Exposure is weighted lower (20%) and varies more naturally in field conditions.
   bool meetsThreshold(double threshold) {
     return sharpness >= threshold && framing >= threshold;
   }
