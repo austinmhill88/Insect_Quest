@@ -4,4 +4,9 @@ class Flags {
   static bool tradingEnabled = false;
   static bool iapEnabled = false;
   static bool serverVerification = false;
+  
+  // Anti-cheat feature flags
+  static bool exifValidationEnabled = true;
+  static bool duplicateDetectionEnabled = true;
+  static bool livenessCheckEnabled = false; // Optional for rare/legendary
 }

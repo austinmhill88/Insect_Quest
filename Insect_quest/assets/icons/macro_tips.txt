@@ -1,0 +1,12 @@
+PLACEHOLDER: Macro Photography Tips Icon
+=========================================
+
+This is a placeholder for a macro photography tips icon.
+
+When ready to implement:
+- Replace with an actual icon file (PNG/SVG)
+- Recommended size: 24x24dp or vector format
+- Design: Lightbulb or info icon
+- Color: Amber/yellow for tips/guidance
+
+Current implementation uses Flutter's built-in Icons.lightbulb_outline

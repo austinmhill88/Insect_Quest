@@ -6,19 +6,52 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 
 ✨ **Core Features:**
 - 📸 Camera capture with quality analysis (sharpness, exposure, framing)
-- 🔍 On-device identification stub (genus-first approach with species suggestions)
+- 🔍 Genus-first identification with 3-5 suggestions (on-device ML stub, ready for TFLite model)
+- ✏️ User can confirm genus and optionally specify species
 - ⭐ Rarity-based point system (Common to Legendary tiers)
 - 📊 Photo quality multiplier (0.85-1.15x)
+- 🎴 **Critter Codex** - Visual card collection grid with advanced filters
 - 📝 Journal with persistent capture history
 - 🗺️ Map with coarse location markers (~1km geocells)
+- 🏆 Regional leaderboards by card count and points
 - 👶 Kids Mode with enhanced safety features
 - 💰 **Coin Economy**: Earn coins by minting cards (capturing insects)
 - 🔄 **Trading System**: List cards, propose swaps (1:1 or with coins), escrow support
+- 🎯 Daily and Weekly Quests for ongoing engagement
+- 🔥 Streak tracking system
+- 🏆 Achievement system with set/milestone completions
+- 💰 Coin economy for quest rewards
+
+🎯 **Quest System:**
+- Daily quests refresh every day at midnight
+- Weekly quests refresh every Monday
+- Quest types:
+  - Capture any insect
+  - Capture specific groups (pollinators, urban species, etc.)
+  - Capture with quality thresholds
+  - Diversity challenges (unique groups)
+- Rewards: Coins and foil card chances
+- Real-time progress tracking
+- Claim rewards when quests are completed
+
+🔥 **Streak & Achievements:**
+- Track consecutive days of exploration
+- View current and longest streak
+- 10+ achievements to unlock
+- Set completion achievements (Butterflies, Bees, Spiders)
+- Milestone achievements (10, 50, 100 captures)
+- Streak achievements (7-day, 30-day)
+- Achievement rewards contribute to coin balance
+
+👶 **Kids Mode Benefits:**
+- 🛡️ Anti-cheat system with EXIF, duplicate detection, and optional liveness checks
 
 🎯 **Kids Mode Benefits:**
 - Quality floor locked at 0.9 minimum
 - Map markers hidden for privacy
+- Leaderboards hidden for privacy
 - Safety tips banner when encountering spiders
+- Unsafe genera filtered from identification suggestions (spiders, centipedes)
 - Toggle available on Camera and Journal pages
 
 🏆 **Special Features:**
@@ -38,6 +71,12 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - Trading marketplace with escrow system
 - List cards for trade with coin offers
 - Accept/cancel trades with automatic coin transfers
+🛡️ **Anti-Cheat & Validation:**
+- **EXIF Validation**: Detects and blocks screenshots, scans, or edited photos
+- **Duplicate Detection**: Prevents multiple mints from the same photo using perceptual hashing
+- **Liveness Check**: Optional camera movement verification for rare/legendary captures
+- **Admin Panel**: Review flagged/rejected captures with detailed logs
+- All validation checks can be toggled via feature flags
 
 ## Prerequisites
 
@@ -136,24 +175,37 @@ Or in Android Studio:
 ```
 Insect_quest/
 ├── lib/
-│   ├── main.dart                 # App entry point with bottom navigation
+│   ├── main.dart                      # App entry point with bottom navigation
 │   ├── config/
-│   │   ├── feature_flags.dart    # Feature toggles (Kids Mode default, etc.)
-│   │   └── scoring.dart          # Point calculation and quality multipliers
+│   │   ├── feature_flags.dart         # Feature toggles (Kids Mode default, etc.)
+│   │   └── scoring.dart               # Point calculation and quality multipliers
 │   ├── models/
-│   │   └── capture.dart          # Capture data model with JSON serialization
+│   │   ├── capture.dart               # Capture data model with JSON serialization
+│   │   └── genus_suggestion.dart      # Genus identification result model
 │   ├── pages/
+│   │   ├── camera_page.dart           # Camera preview, capture, and quality analysis
+│   │   ├── map_page.dart              # Google Maps with coarse location markers
+│   │   └── journal_page.dart          # List of captures with stats and flags
+│   ├── services/
+│   │   ├── catalog_service.dart       # Species catalog loader and lookup
+│   │   ├── identifier_service.dart    # Genus-first identification (ML-ready)
+│   │   ├── ml_stub.dart               # Legacy identification stub
+│   │   └── settings_service.dart      # Persistent settings (Kids Mode)
 │   │   ├── camera_page.dart      # Camera preview, capture, and quality analysis
 │   │   ├── map_page.dart         # Google Maps with coarse location markers
 │   │   ├── journal_page.dart     # List of captures with stats and flags
 │   │   ├── economy_page.dart     # Coin balance and economy overview
 │   │   └── trading_page.dart     # Trading marketplace for card swaps
+│   │   ├── map_page.dart         # Google Maps with aggregate geocell markers
+│   │   ├── journal_page.dart     # List of captures with stats and flags
+│   │   └── leaderboard_page.dart # Regional leaderboard by card count and points
 │   ├── services/
 │   │   ├── catalog_service.dart  # Species catalog loader and lookup
 │   │   ├── ml_stub.dart          # Identification stub (heuristic-based)
 │   │   ├── settings_service.dart # Persistent settings (Kids Mode)
 │   │   ├── firestore_service.dart # Firebase cloud storage for coins/trades
 │   │   └── user_service.dart     # User ID management
+│   │   └── leaderboard_service.dart # Geocell aggregation and statistics
 │   └── assets/
 │       └── catalogs/
 │           └── species_catalog_ga.json  # North Georgia species catalog
@@ -169,6 +221,8 @@ Insect_quest/
     ├── dev-instructions.md       # Detailed development instructions
     ├── firebase_setup.md         # Firebase/Firestore configuration guide
     └── theming.md                # UI customization for economy features
+    ├── dev-instructions.md            # Detailed development instructions
+    └── identifier_service.md          # ML model integration guide
 ```
 
 ## How to Use
@@ -183,13 +237,46 @@ Insect_quest/
 6. **Species Suggestion**: Review and select from suggested species or keep genus-only
 7. **Safety Tips**: If it's a spider and Kids Mode is on, you'll see a safety banner
 8. **Capture Saved**: Points and coins awarded and added to your journal!
+6. **Genus Suggestions**: Review 3-5 genus suggestions and select the best match
+   - Or manually enter a genus if none match
+7. **Species Input** (Optional): Specify species if you know it, or keep genus-only
+8. **Safety Tips**: If it's a spider and Kids Mode is on, you'll see a safety banner
+9. **Capture Saved**: Points awarded and added to your journal!
 
 ### Viewing the Map
 
 1. **Navigate to the Map Tab** (map icon)
-2. **View markers** at coarse locations (~1km accuracy)
-3. **Tap markers** to see species/genus and points
-4. **Kids Mode**: Map markers are hidden for privacy
+2. **View aggregate markers** at coarse locations (~1km geocells)
+3. **Each marker shows** total card count for that region
+4. **Tap markers** to see the leader list for that geocell
+5. **Bottom sheet displays** all captures in that region, sorted by points
+6. **Kids Mode**: Map markers are hidden for privacy
+
+### Checking Regional Leaderboards
+
+1. **Navigate to the Leaders Tab** (trophy icon)
+2. **View regions ranked** by total points earned
+3. **Top 3 regions** get medal badges (gold, silver, bronze)
+4. **Each entry shows** card count, unique species, and total points
+5. **Tap any region** to see detailed capture list
+6. **Kids Mode**: Leaderboards are hidden for privacy
+
+### Browsing the Critter Codex
+
+1. **Navigate to the Codex Tab** (card icon)
+2. **Browse your collection** in a visual card grid layout
+3. **Use filters** to find specific cards:
+   - Search by genus or species name
+   - Filter by rarity tier (Common, Uncommon, Rare, Epic, Legendary)
+   - Filter by genus
+4. **Tap any card** to view detailed information including:
+   - Full-size photo
+   - Stats (points, quality, taxonomic info)
+   - Location details
+   - Collection timestamp
+   - Special traits and badges
+5. **Pull down to refresh** or use the refresh button to update the collection
+6. **Clear filters** to see your full collection again
 
 ### Reviewing Your Journal
 
@@ -322,12 +409,73 @@ Base Coins × Rarity Multiplier × Quality Multiplier
 - **Cancellation**: Escrowed coins refunded to buyer
 
 ### Coarse Location
+### Coarse Location & Geocells
+
+**Privacy-First Design:** No precise locations are stored or displayed. All location data uses coarse geocells.
 
 Coordinates are rounded to 0.01° (~1km) for privacy:
 ```dart
 latRounded = (lat * 100).round() / 100.0
 lonRounded = (lon * 100).round() / 100.0
+geocell = "34.00,-84.00" // String key format
 ```
+
+### Identification Service
+
+The app uses a genus-first identification approach:
+1. After photo capture, the service suggests 3-5 plausible genera
+2. User confirms or overrides the genus
+3. User optionally specifies species (or keeps genus-only)
+
+**Current Implementation**: Heuristic-based stub for MVP
+
+**Ready for ML Integration**: The service is designed to work with:
+- TFLite on-device models
+- Cloud-based classification API
+- Hybrid approach (on-device + cloud fallback)
+
+For detailed integration instructions, see `docs/identifier_service.md`
+copilot/add-geocell-map-and-leaderboards
+**Geocell Features:**
+- Each geocell represents approximately 1 km² area
+- Map markers aggregate all captures within the same geocell
+- Leaderboards rank regions by geocell performance
+- Kids Mode further restricts visibility of all geocell data
+
+**Database Storage:**
+- Only geocell string keys are stored (e.g., "34.00,-84.00")
+- Original precise lat/lon coordinates are NOT persisted
+- All map and leaderboard logic uses geocell aggregation
+
+### Anti-Cheat System
+
+The app includes a multi-layered anti-cheat system to ensure fair play:
+
+**EXIF Validation**:
+- Checks for camera metadata (Make, Model, DateTime)
+- Blocks screenshots and edited photos
+- Configurable via `Flags.exifValidationEnabled`
+
+**Duplicate Detection**:
+- Uses perceptual hashing (dHash algorithm)
+- Detects identical and near-identical photos
+- Prevents multiple mints from same capture
+- Configurable via `Flags.duplicateDetectionEnabled`
+
+**Liveness Check** (Optional):
+- Requires camera movement for rare/legendary captures
+- Prevents photo-of-photo fraud
+- Disabled by default
+- Enable via `Flags.livenessCheckEnabled`
+
+**Admin Panel**:
+- Access from Journal page (admin icon)
+- View all flagged/rejected captures
+- Review validation reasons and timestamps
+- Clear logs functionality
+
+For detailed documentation, see [`docs/anti_cheat_system.md`](docs/anti_cheat_system.md)
+main
 
 ## Future Enhancements (Post-MVP)
 
@@ -336,7 +484,7 @@ lonRounded = (lon * 100).round() / 100.0
 - [ ] In-app purchases for premium features
 - [ ] Events and challenges
 - [ ] iOS support (TestFlight)
-- [ ] Machine learning model integration
+- [x] Machine learning model integration (architecture ready)
 - [ ] Social features and leaderboards
 
 ## License

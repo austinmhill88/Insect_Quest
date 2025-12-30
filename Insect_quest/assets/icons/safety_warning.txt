@@ -1,0 +1,12 @@
+PLACEHOLDER: Safety Warning Icon
+=================================
+
+This is a placeholder for safety warning icons.
+
+When ready to implement:
+- Replace with an actual icon file (PNG/SVG)
+- Recommended size: 24x24dp or vector format
+- Design: Shield with warning or safety badge
+- Color: Orange/red for warnings, blue for safety tips
+
+Current implementation uses Flutter's built-in Icons.warning_amber and shield icons

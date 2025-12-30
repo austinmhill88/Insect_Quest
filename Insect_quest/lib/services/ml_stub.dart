@@ -11,6 +11,7 @@ class MLService {
     required String imagePath,
     required double lat,
     required double lon,
+    bool kidsMode = false,
   }) async {
     // Stub heuristics: random confidence, prefer butterflies if near GA
     final inGeorgia = lat >= 30 && lat <= 35 && lon <= -80 && lon >= -85;
@@ -19,11 +20,23 @@ class MLService {
     final isButterfly = rnd.nextBool();
 
     // Task 6: Prefer state species for suggestions when in Georgia
+    // Kids Mode: Filter to only safe species
     if (inGeorgia && catalogService != null) {
       final stateSpecies = catalogService!.stateSpeciesGeorgia();
-      if (stateSpecies.isNotEmpty) {
-        // Pick a state species to suggest
-        final chosen = stateSpecies[rnd.nextInt(stateSpecies.length)];
+      List<Map<String, dynamic>> availableSpecies = stateSpecies;
+      
+      // Filter to safe species in Kids Mode
+      if (kidsMode) {
+        availableSpecies = stateSpecies.where((s) {
+          final entry = s["entry"] as Map<String, dynamic>;
+          final flags = entry["flags"] as Map<String, dynamic>? ?? {};
+          return flags["safe_for_kids"] == true;
+        }).toList();
+      }
+      
+      if (availableSpecies.isNotEmpty) {
+        // Pick a species to suggest
+        final chosen = availableSpecies[rnd.nextInt(availableSpecies.length)];
         final entry = chosen["entry"];
         final species = entry["species"];
         String genus = entry["genus"] ?? "";
@@ -59,7 +72,25 @@ class MLService {
       }
     }
 
-    // Fallback to original heuristic
+    // Fallback to safe species in Kids Mode
+    if (kidsMode) {
+      // Default to butterflies which are safe
+      final genus = "Papilio";
+      final speciesCandidates = [
+        {"species": "Papilio glaucus", "confidence": confidence},
+        {"species": "Papilio troilus", "confidence": (confidence * 0.2)}
+      ];
+      
+      return {
+        "order": "Lepidoptera",
+        "family": "Papilionidae",
+        "genus": genus,
+        "species_candidates": speciesCandidates,
+        "confidence": confidence
+      };
+    }
+
+    // Normal mode fallback to original heuristic
     final genus = isButterfly ? "Papilio" : "Apis";
     final speciesCandidates = isButterfly
         ? [
