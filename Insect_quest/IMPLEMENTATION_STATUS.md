@@ -285,9 +285,96 @@ Beyond the 10 tasks, the following were also created:
 
 ---
 
+## ✅ Task 11: Kids Mode v2 - Parental Controls, Safe Quests, Enhanced Privacy
+**Status:** COMPLETE
+
+### Features Implemented
+
+#### 1. Parental Control PIN System
+- ✅ PIN setup dialog (`lib/widgets/pin_dialogs.dart`)
+- ✅ PIN verification dialog
+- ✅ PIN storage in SharedPreferences (`lib/services/settings_service.dart`)
+- ✅ PIN protection on Kids Mode toggle (all pages)
+- ✅ 4-8 digit PIN requirement
+- ✅ PIN verification required to disable Kids Mode
+
+#### 2. Safe Species Filtering
+- ✅ Added `safe_for_kids` flag to all catalog entries
+- ✅ Butterflies marked as safe (all 4 species)
+- ✅ Bees marked as safe (Honey Bees, Bumblebees)
+- ✅ Beetles marked as safe (all species)
+- ✅ Millipedes marked as safe
+- ✅ Spiders marked as unsafe (requires caution)
+- ✅ Paper Wasps marked as unsafe (can sting)
+- ✅ Centipedes marked as unsafe (can bite)
+- ✅ ML stub filters species based on Kids Mode
+- ✅ Only safe species suggested in Kids Mode
+
+#### 3. Quest System
+- ✅ Quest data model (`lib/models/quest.dart`)
+- ✅ QuestProgress tracking model
+- ✅ Quest service with safe quest filtering (`lib/services/quest_service.dart`)
+- ✅ 6 safe quests for kids:
+  - 🦋 Butterfly Beginner (3 butterflies, 100 pts)
+  - 🐝 Bee Buddy (2 bees, 100 pts)
+  - 🪲 Beetle Explorer (2 beetles, 100 pts)
+  - ⭐ First Five Friends (5 insects, 150 pts)
+  - 🌈 Diversity Explorer (3 groups, 200 pts)
+  - 🌟 State Species Hunter (1 state species, 250 pts)
+- ✅ 2 advanced quests filtered in Kids Mode
+- ✅ Automatic quest progress tracking
+- ✅ Quest completion notifications
+- ✅ Quests tab in Journal with progress visualization
+
+#### 4. Enhanced Privacy & Safety
+- ✅ Coarse geocells maintained (~1km precision)
+- ✅ Map markers hidden in Kids Mode (existing + PIN protected)
+- ✅ Lower camera quality requirements (existing)
+- ✅ Safety tips for spiders (existing)
+- ✅ PIN protection prevents access to full map data
+
+#### 5. Kid-Friendly UI
+- ✅ Camera page enhancements:
+  - Bright yellow framing guide (4px border)
+  - Friendly emoji decorations (🦋🐝🪲🐞)
+  - Encouraging banner: "Find a bug and take a photo!"
+  - Larger, rounder UI elements
+- ✅ Quest completion celebrations:
+  - "🎉 Great job! You completed: [Quest Name]!"
+  - Reward points displayed
+- ✅ Color-coded UI elements:
+  - Yellow for Kids Mode elements
+  - Green for completed quests
+  - Blue for active quests
+
+#### 6. Quest Tab Integration
+- ✅ Two-tab Journal interface (Captures | Quests)
+- ✅ Visual progress bars for each quest
+- ✅ Emoji icons for quest categories
+- ✅ Completion status indicators
+- ✅ Progress tracking (e.g., "3/5 • 150 pts")
+
+### Files Created
+- `lib/widgets/pin_dialogs.dart` - PIN UI components
+- `lib/models/quest.dart` - Quest data models
+- `lib/services/quest_service.dart` - Quest management
+- `docs/KIDS_MODE_V2.md` - Comprehensive feature documentation
+
+### Files Updated
+- `lib/services/settings_service.dart` - Added PIN management
+- `lib/services/ml_stub.dart` - Added safe species filtering
+- `lib/pages/camera_page.dart` - PIN protection, kid UI, quest notifications
+- `lib/pages/journal_page.dart` - PIN protection, Quests tab
+- `lib/pages/map_page.dart` - PIN protection
+- `assets/catalogs/species_catalog_ga.json` - Added safe_for_kids flags
+
+**Definition of Done:** ✅ Kids Mode has PIN protection; All pages respect Kids Mode; Only safe species/quests shown; Kid-friendly UI with placeholder art (emojis)
+
+---
+
 ## Summary
 
-**All 10 tasks from the dev-instructions.md are COMPLETE! ✅**
+**All 10 MVP tasks + Kids Mode v2 are COMPLETE! ✅**
 
 The app is ready for development with the following capabilities:
 
@@ -295,12 +382,22 @@ The app is ready for development with the following capabilities:
 2. ✅ Species identification stub with state species preference
 3. ✅ Points system with rarity tiers and quality multipliers
 4. ✅ Legendary override logic for Georgia state species
-5. ✅ Kids Mode with safety features and privacy controls
+5. ✅ Kids Mode v1 with safety features and privacy controls
 6. ✅ Local storage with persistent journal
 7. ✅ Map with coarse location markers
 8. ✅ Debug logging for field testing
 9. ✅ Retake prompt for quality control
 10. ✅ Comprehensive documentation
+11. ✅ **Kids Mode v2 with parental controls, safe quests, and enhanced UI**
+
+### Kids Mode v2 Highlights
+
+- 🔒 **Parental PIN Protection**: Secure 4-8 digit PIN prevents unauthorized setting changes
+- 🦋 **Safe Species Only**: Filtered catalog with kid-friendly insects only
+- 🎯 **Learning Quests**: 6 educational quests with progress tracking
+- 🌈 **Friendly UI**: Colorful overlays, emojis, and encouraging messages
+- 🗺️ **Enhanced Privacy**: PIN-protected map controls, coarse locations
+- 📊 **Progress Tracking**: New Quests tab shows achievements and progress
 
 ### Next Steps for Users
 
@@ -309,7 +406,8 @@ The app is ready for development with the following capabilities:
 3. Add Google Maps API key to `android/app/src/main/res/values/strings.xml`
 4. Run `flutter pub get`
 5. Run `flutter run`
-6. Start capturing insects! 🐛🦋🐝
+6. Enable Kids Mode and set up a PIN
+7. Start capturing insects and completing quests! 🐛🦋🐝
 
 ### Future Enhancements (Post-MVP)
 
@@ -320,5 +418,9 @@ The following are noted in the docs but NOT implemented (as intended):
 - ❌ Events
 - ❌ iOS support
 - ❌ TestFlight
+- 💡 Multiple child profiles
+- 💡 Customizable difficulty levels
+- 💡 Parental dashboard
+- 💡 Audio guidance
 
 These will be addressed in future iterations.
