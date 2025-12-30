@@ -13,6 +13,7 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - 🗺️ Map with coarse location markers (~1km geocells)
 - 🏆 Regional leaderboards by card count and points
 - 👶 Kids Mode with enhanced safety features
+- 🛡️ Anti-cheat system with EXIF, duplicate detection, and optional liveness checks
 
 🎯 **Kids Mode Benefits:**
 - Quality floor locked at 0.9 minimum
@@ -29,6 +30,13 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
   - Epic points awarded otherwise, but Legendary badge retained
 - Species confirmation bonus: +30% points
 - Retake prompt for low-quality photos (sharpness < 0.9 or framing < 0.9)
+
+🛡️ **Anti-Cheat & Validation:**
+- **EXIF Validation**: Detects and blocks screenshots, scans, or edited photos
+- **Duplicate Detection**: Prevents multiple mints from the same photo using perceptual hashing
+- **Liveness Check**: Optional camera movement verification for rare/legendary captures
+- **Admin Panel**: Review flagged/rejected captures with detailed logs
+- All validation checks can be toggled via feature flags
 
 ## Prerequisites
 
@@ -268,6 +276,7 @@ lonRounded = (lon * 100).round() / 100.0
 geocell = "34.00,-84.00" // String key format
 ```
 
+copilot/add-geocell-map-and-leaderboards
 **Geocell Features:**
 - Each geocell represents approximately 1 km² area
 - Map markers aggregate all captures within the same geocell
@@ -278,6 +287,36 @@ geocell = "34.00,-84.00" // String key format
 - Only geocell string keys are stored (e.g., "34.00,-84.00")
 - Original precise lat/lon coordinates are NOT persisted
 - All map and leaderboard logic uses geocell aggregation
+
+### Anti-Cheat System
+
+The app includes a multi-layered anti-cheat system to ensure fair play:
+
+**EXIF Validation**:
+- Checks for camera metadata (Make, Model, DateTime)
+- Blocks screenshots and edited photos
+- Configurable via `Flags.exifValidationEnabled`
+
+**Duplicate Detection**:
+- Uses perceptual hashing (dHash algorithm)
+- Detects identical and near-identical photos
+- Prevents multiple mints from same capture
+- Configurable via `Flags.duplicateDetectionEnabled`
+
+**Liveness Check** (Optional):
+- Requires camera movement for rare/legendary captures
+- Prevents photo-of-photo fraud
+- Disabled by default
+- Enable via `Flags.livenessCheckEnabled`
+
+**Admin Panel**:
+- Access from Journal page (admin icon)
+- View all flagged/rejected captures
+- Review validation reasons and timestamps
+- Clear logs functionality
+
+For detailed documentation, see [`docs/anti_cheat_system.md`](docs/anti_cheat_system.md)
+main
 
 ## Future Enhancements (Post-MVP)
 

@@ -11,6 +11,8 @@ import '../models/capture.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../services/anti_cheat_service.dart';
+import '../services/liveness_service.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -163,6 +165,71 @@ class _CameraPageState extends State<CameraPage> {
     }
 
     // Location - use only coarse geocell coordinates (no precise locations saved)
+    // Anti-cheat validation
+    Map<String, dynamic> validationResult = {
+      'validationStatus': AntiCheatService.validationValid,
+      'photoHash': '',
+      'hasExif': true,
+      'isDuplicate': false,
+    };
+    
+    if (Flags.exifValidationEnabled || Flags.duplicateDetectionEnabled) {
+      validationResult = await AntiCheatService.validateCapture(file.path);
+      
+      // Handle rejected captures
+      if (validationResult['validationStatus'] == AntiCheatService.validationRejected) {
+        if (mounted) {
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text("❌ Capture Rejected"),
+              content: Text(
+                validationResult['rejectionReason'] ?? 'This capture failed validation checks.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+        return; // Exit without saving
+      }
+      
+      // Show warning for flagged captures
+      if (validationResult['validationStatus'] == AntiCheatService.validationFlagged) {
+        if (mounted) {
+          final proceed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text("⚠️ Validation Warning"),
+              content: const Text(
+                'This photo has been flagged during validation. '
+                'It may have missing or unusual metadata. '
+                'Would you like to proceed anyway?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text("Proceed"),
+                ),
+              ],
+            ),
+          );
+          if (proceed != true) {
+            return; // Exit without saving
+          }
+        }
+      }
+    }
+
+    // Location
     final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
     final preciseLatitude = pos.latitude;
     final preciseLongitude = pos.longitude;
@@ -244,6 +311,36 @@ class _CameraPageState extends State<CameraPage> {
       // tier stays "Legendary" for badge display
     }
 
+    // Liveness verification for rare/legendary captures (optional)
+    bool livenessVerified = false;
+    if (LivenessService.isLivenessRequired(tier, enabled: Flags.livenessCheckEnabled)) {
+      if (mounted && controller != null) {
+        livenessVerified = await LivenessService.verifyLiveness(context, controller!);
+        if (!livenessVerified) {
+          // User failed or cancelled liveness check
+          if (mounted) {
+            await showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("❌ Liveness Verification Failed"),
+                content: const Text(
+                  'Liveness verification is required for rare and legendary captures. '
+                  'Please try again.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+            );
+          }
+          return; // Exit without saving
+        }
+      }
+    }
+
     // Task 9: Kids Mode - Show safety tips banner for spiders
     if (kidsMode && group != null && (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider"))) {
       if (mounted) {
@@ -276,6 +373,7 @@ class _CameraPageState extends State<CameraPage> {
     debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
     debugPrint("Points: $pts");
+    debugPrint("Anti-cheat: status=${validationResult['validationStatus']} hash=${validationResult['photoHash']} hasExif=${validationResult['hasExif']} liveness=$livenessVerified");
 
     // Build capture (only coarse geocell coordinates saved, not precise location)
     final cap = Capture(
@@ -292,6 +390,10 @@ class _CameraPageState extends State<CameraPage> {
       flags: flags,
       points: pts,
       quality: qMult,
+      validationStatus: validationResult['validationStatus'],
+      photoHash: validationResult['photoHash'],
+      hasExif: validationResult['hasExif'],
+      livenessVerified: livenessVerified,
     );
 
     // Save and navigate to Journal
