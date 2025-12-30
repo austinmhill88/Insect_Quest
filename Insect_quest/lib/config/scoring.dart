@@ -40,4 +40,15 @@ class Scoring {
     if (firstGenus) p *= 1.15;
     return p.round();
   }
+
+  // Coin scoring for card minting
+  static int coins({
+    required String tier,
+    required double qualityMult,
+  }) {
+    final baseScore = base[tier] ?? 50;
+    final rMult = mult[tier] ?? 1.0;
+    double c = baseScore * rMult * qualityMult;
+    return c.round();
+  }
 }

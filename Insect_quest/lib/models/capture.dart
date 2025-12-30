@@ -12,6 +12,7 @@ class Capture {
   final Map<String, bool> flags; // state_species, invasive, venomous
   final int points;
   final double quality;
+  final int coins; // Coins awarded for this capture
 
   Capture({
     required this.id,
@@ -27,6 +28,7 @@ class Capture {
     required this.flags,
     required this.points,
     required this.quality,
+    required this.coins,
   });
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +45,7 @@ class Capture {
         "flags": flags,
         "points": points,
         "quality": quality,
+        "coins": coins,
       };
 
   static Capture fromJson(Map<String, dynamic> m) => Capture(
@@ -59,5 +62,6 @@ class Capture {
         flags: Map<String, bool>.from(m["flags"] ?? {}),
         points: m["points"],
         quality: m["quality"],
+        coins: m["coins"] ?? 0, // Default to 0 for backward compatibility
       );
 }

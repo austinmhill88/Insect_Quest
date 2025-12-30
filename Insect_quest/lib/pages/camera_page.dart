@@ -11,6 +11,8 @@ import '../models/capture.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../services/firestore_service.dart';
+import '../services/user_service.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -268,9 +270,15 @@ class _CameraPageState extends State<CameraPage> {
       firstGenus: false, // MVP: no novelty tracking
     );
 
+    // Calculate coins awarded for minting this card
+    final coinsAwarded = Scoring.coins(
+      tier: pointsTier,
+      qualityMult: qMult,
+    );
+
     debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
-    debugPrint("Points: $pts");
+    debugPrint("Points: $pts, Coins: $coinsAwarded");
 
     // Build capture
     final cap = Capture(
@@ -287,12 +295,26 @@ class _CameraPageState extends State<CameraPage> {
       flags: flags,
       points: pts,
       quality: qMult,
+      coins: coinsAwarded,
     );
 
     // Save and navigate to Journal
     await JournalPage.saveCapture(cap);
+
+    // Award coins and sync to Firestore
+    try {
+      final userId = await UserService.getUserId();
+      final firestoreService = FirestoreService();
+      await firestoreService.addCoins(userId, coinsAwarded);
+    } catch (e) {
+      debugPrint("Error syncing coins to Firestore: $e");
+      // Continue even if Firestore sync fails (coins are still tracked locally)
+    }
+
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Saved capture (+$pts pts)")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Saved capture (+$pts pts, +$coinsAwarded coins)")),
+      );
     }
   }
 

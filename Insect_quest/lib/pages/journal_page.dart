@@ -74,7 +74,22 @@ class _JournalPageState extends State<JournalPage> {
               child: ListTile(
                 leading: Image.file(Uri.parse(c.photoPath).isAbsolute ? File(c.photoPath) : File(c.photoPath)),
                 title: Text(c.species ?? c.genus),
-                subtitle: Text("${c.group} • ${c.tier} • ${c.points} pts • ${c.geocell}"),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("${c.group} • ${c.tier}"),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, size: 14, color: Colors.blue),
+                        Text(" ${c.points} pts"),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.monetization_on, size: 14, color: Colors.amber),
+                        Text(" ${c.coins} coins"),
+                      ],
+                    ),
+                    Text(c.geocell, style: const TextStyle(fontSize: 11)),
+                  ],
+                ),
                 trailing: Wrap(
                   spacing: 6,
                   children: [
