@@ -117,8 +117,8 @@ class IdentifierService {
     // Ensure we have 3-5 suggestions
     suggestions = suggestions.take(5).toList();
     if (suggestions.length < 3) {
-      // Pad with additional safe suggestions if needed
-      suggestions.addAll(_getAdditionalSafeSuggestions(suggestions.length, 3 - suggestions.length));
+      // Pad with additional safe suggestions if needed (avoiding duplicates)
+      suggestions.addAll(_getAdditionalSafeSuggestions(suggestions, 3 - suggestions.length));
     }
 
     return suggestions;
@@ -246,8 +246,13 @@ class IdentifierService {
   /// Get additional safe suggestions to ensure minimum count
   /// 
   /// Provides fallback genus suggestions that are safe for all users.
-  /// Checks for duplicates before adding.
-  List<GenusSuggestion> _getAdditionalSafeSuggestions(int currentCount, int needed) {
+  /// Checks for duplicates by examining existing suggestions.
+  /// 
+  /// [existingSuggestions] Current list of suggestions to check for duplicates
+  /// [needed] Number of additional suggestions needed
+  List<GenusSuggestion> _getAdditionalSafeSuggestions(List<GenusSuggestion> existingSuggestions, int needed) {
+    final existingGenera = existingSuggestions.map((s) => s.genus).toSet();
+    
     final safeSuggestions = [
       GenusSuggestion(
         genus: 'Papilio',
@@ -275,7 +280,11 @@ class IdentifierService {
       ),
     ];
     
-    return safeSuggestions.take(needed).toList();
+    // Filter out duplicates and take only what's needed
+    return safeSuggestions
+        .where((s) => !existingGenera.contains(s.genus))
+        .take(needed)
+        .toList();
   }
 
   /// Get species suggestions for a confirmed genus
