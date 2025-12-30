@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'pages/camera_page.dart';
 import 'pages/map_page.dart';
 import 'pages/journal_page.dart';
+import 'pages/admin_page.dart';
 import 'services/catalog_service.dart';
 import 'config/feature_flags.dart';
 
@@ -51,6 +52,21 @@ class _HomeNavState extends State<HomeNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: index == 2 ? AppBar(
+        title: const Text('InsectQuest'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (ctx) => const AdminPage()),
+              );
+            },
+            tooltip: 'Admin Panel',
+          ),
+        ],
+      ) : null,
       body: pages[index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,

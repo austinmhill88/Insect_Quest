@@ -12,6 +12,7 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - 📝 Journal with persistent capture history
 - 🗺️ Map with coarse location markers (~1km geocells)
 - 👶 Kids Mode with enhanced safety features
+- 🛡️ Anti-cheat system with EXIF, duplicate detection, and optional liveness checks
 
 🎯 **Kids Mode Benefits:**
 - Quality floor locked at 0.9 minimum
@@ -27,6 +28,13 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
   - Epic points awarded otherwise, but Legendary badge retained
 - Species confirmation bonus: +30% points
 - Retake prompt for low-quality photos (sharpness < 0.9 or framing < 0.9)
+
+🛡️ **Anti-Cheat & Validation:**
+- **EXIF Validation**: Detects and blocks screenshots, scans, or edited photos
+- **Duplicate Detection**: Prevents multiple mints from the same photo using perceptual hashing
+- **Liveness Check**: Optional camera movement verification for rare/legendary captures
+- **Admin Panel**: Review flagged/rejected captures with detailed logs
+- All validation checks can be toggled via feature flags
 
 ## Prerequisites
 
@@ -249,6 +257,35 @@ Coordinates are rounded to 0.01° (~1km) for privacy:
 latRounded = (lat * 100).round() / 100.0
 lonRounded = (lon * 100).round() / 100.0
 ```
+
+### Anti-Cheat System
+
+The app includes a multi-layered anti-cheat system to ensure fair play:
+
+**EXIF Validation**:
+- Checks for camera metadata (Make, Model, DateTime)
+- Blocks screenshots and edited photos
+- Configurable via `Flags.exifValidationEnabled`
+
+**Duplicate Detection**:
+- Uses perceptual hashing (dHash algorithm)
+- Detects identical and near-identical photos
+- Prevents multiple mints from same capture
+- Configurable via `Flags.duplicateDetectionEnabled`
+
+**Liveness Check** (Optional):
+- Requires camera movement for rare/legendary captures
+- Prevents photo-of-photo fraud
+- Disabled by default
+- Enable via `Flags.livenessCheckEnabled`
+
+**Admin Panel**:
+- Access from Journal page (admin icon)
+- View all flagged/rejected captures
+- Review validation reasons and timestamps
+- Clear logs functionality
+
+For detailed documentation, see [`docs/anti_cheat_system.md`](docs/anti_cheat_system.md)
 
 ## Future Enhancements (Post-MVP)
 

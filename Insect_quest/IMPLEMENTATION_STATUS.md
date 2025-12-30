@@ -247,9 +247,72 @@ Implemented across multiple files:
 
 ---
 
+## ✅ Task 11: Anti-Cheat & Validation System
+**Status:** COMPLETE
+
+Implemented comprehensive anti-cheat pipeline to prevent fraud and ensure capture integrity:
+
+### EXIF Validation
+- ✅ Added `exif: ^3.3.0` package to pubspec.yaml
+- ✅ `AntiCheatService.hasValidExif()` extracts and validates EXIF metadata
+- ✅ Checks for camera-specific fields (Make, Model, DateTime)
+- ✅ Detects and blocks screenshots (software tag without camera info)
+- ✅ Flags photos with missing critical metadata
+- ✅ Logs suspicious/rejected captures for admin review
+
+### Duplicate Detection
+- ✅ Added `crypto: ^3.0.3` package for hashing
+- ✅ Implemented perceptual hash generation using dHash algorithm
+- ✅ Stores photo hashes in SharedPreferences
+- ✅ Detects exact and near-duplicate photos (Hamming distance ≤ 5)
+- ✅ Prevents multiple card mints from same photo
+- ✅ Handles slight variations (cropping, compression)
+
+### Liveness Verification (Optional)
+- ✅ Created `LivenessService` for camera movement verification
+- ✅ Liveness dialog with timed movement prompts
+- ✅ Automatic trigger for Epic/Legendary captures (when enabled)
+- ✅ Blocks capture if verification fails
+- ✅ Configurable via `Flags.livenessCheckEnabled` (disabled by default)
+
+### Admin System
+- ✅ Extended `Capture` model with validation fields:
+  - `validationStatus`: "valid", "flagged", "rejected"
+  - `photoHash`: Perceptual hash for duplicate tracking
+  - `hasExif`: Boolean flag for EXIF presence
+  - `livenessVerified`: Boolean for liveness check status
+- ✅ Suspicious capture logging to JSON file
+- ✅ `AdminPage` for reviewing flagged/rejected captures
+- ✅ Admin panel accessible from Journal page
+- ✅ View logs with timestamps, reasons, and image paths
+- ✅ Clear logs functionality
+
+### Integration
+- ✅ Anti-cheat checks run on every capture
+- ✅ Rejection dialog for blocked captures
+- ✅ Warning dialog for flagged captures (user can proceed)
+- ✅ Journal displays validation status
+- ✅ Debug logging for validation results
+- ✅ Feature flags for enabling/disabling each check
+
+### Documentation
+- ✅ **docs/anti_cheat_system.md** - Comprehensive guide covering:
+  - System overview and architecture
+  - Feature descriptions and technical details
+  - Configuration and API reference
+  - Testing scenarios and troubleshooting
+  - Security considerations
+  - Future enhancements
+- ✅ Updated README.md with anti-cheat section
+- ✅ Inline code documentation for all new services
+
+**Definition of Done:** ✅ All card mints run anti-cheat; obvious fraud blocked, flagged, or reviewed in admin panel; Users cannot mint multiple cards from same photo; Liveness bonus can be optionally required for rares; All code documented for review/extension
+
+---
+
 ## 📚 Additional Deliverables
 
-Beyond the 10 tasks, the following were also created:
+Beyond the 11 tasks, the following were also created:
 
 ### Documentation
 
@@ -287,7 +350,7 @@ Beyond the 10 tasks, the following were also created:
 
 ## Summary
 
-**All 10 tasks from the dev-instructions.md are COMPLETE! ✅**
+**All 11 tasks (10 original + anti-cheat) are COMPLETE! ✅**
 
 The app is ready for development with the following capabilities:
 
@@ -301,6 +364,7 @@ The app is ready for development with the following capabilities:
 8. ✅ Debug logging for field testing
 9. ✅ Retake prompt for quality control
 10. ✅ Comprehensive documentation
+11. ✅ **Anti-cheat & validation system** with EXIF, duplicate detection, and liveness checks
 
 ### Next Steps for Users
 
