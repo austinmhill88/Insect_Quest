@@ -285,9 +285,90 @@ Beyond the 10 tasks, the following were also created:
 
 ---
 
+## ✅ Enhancement: Geocell Map Aggregation and Regional Leaderboards
+**Status:** COMPLETE
+
+### Map Improvements
+- ✅ **Aggregate markers by geocell** instead of individual pins
+  - Each marker represents all captures in that ~1km region
+  - Marker info window shows total card count and points
+  - Tapping marker opens bottom sheet with detailed leader list
+  
+- ✅ **Leader list bottom sheet**
+  - Displays all captures in the selected geocell
+  - Sorted by points (highest first)
+  - Shows species/genus, tier, group, points, and quality
+  - Color-coded badges by rarity tier
+  - Draggable sheet with scroll support
+
+- ✅ **Privacy maintained**
+  - Kids Mode continues to hide all map markers
+  - Privacy banner shown when Kids Mode active
+  - Only coarse geocell data displayed (no precise locations)
+
+### Regional Leaderboard Page
+- ✅ **New navigation tab** (4th tab with trophy icon)
+  - Full-page leaderboard view
+  - Ranked by total points per geocell
+  - Refresh button to reload data
+  
+- ✅ **Leaderboard features**
+  - Top 3 regions get medal badges (gold, silver, bronze)
+  - Each entry shows:
+    - Region geocell coordinates
+    - Total card count
+    - Number of unique species
+    - Total points earned
+  - Tap any entry to see detailed capture list
+  
+- ✅ **Kids Mode privacy**
+  - Entire leaderboard hidden when Kids Mode active
+  - Privacy message with lock icon
+  - Quick toggle to disable Kids Mode if desired
+
+### Database & Privacy
+- ✅ **No precise locations saved**
+  - Capture model updated with clear documentation
+  - Only coarse lat/lon from geocell stored (0.01° precision)
+  - Precise GPS coordinates never persisted
+  - ML identification uses precise location but doesn't save it
+  
+- ✅ **LeaderboardService**
+  - Aggregates captures by geocell
+  - Calculates card count and total points per region
+  - Provides sorted leaderboard data
+  - Utility functions for geocell parsing
+
+### Documentation
+- ✅ **README.md updated** with:
+  - New leaderboard feature in feature list
+  - Usage instructions for viewing leaderboards
+  - Updated map usage instructions (aggregate markers)
+  - Comprehensive geocell system explanation
+  - Privacy-first design documentation
+  - Kids Mode leaderboard privacy
+  
+- ✅ **Code documentation**
+  - All new services documented with dartdoc comments
+  - Inline comments explaining privacy design
+  - Clear separation of precise vs coarse coordinates in code
+
+### Files Changed
+- `lib/models/capture.dart` - Updated documentation for lat/lon fields
+- `lib/pages/camera_page.dart` - Store only coarse geocell coordinates
+- `lib/pages/map_page.dart` - Aggregate markers and leader list UI
+- `lib/pages/leaderboard_page.dart` - New regional leaderboard page
+- `lib/services/leaderboard_service.dart` - New service for geocell aggregation
+- `lib/main.dart` - Added 4th navigation tab for leaderboards
+- `README.md` - Comprehensive feature and privacy documentation
+
+**Definition of Done:** ✅ Map shows aggregate markers by geocell; Clicking marker shows leader list; Regional leaderboard page displays rankings; Kids Mode hides all geographic data; All privacy requirements met; Documentation complete
+
+---
+
 ## Summary
 
-**All 10 tasks from the dev-instructions.md are COMPLETE! ✅**
+**All 10 original tasks + geocell enhancements are COMPLETE! ✅**
 
 The app is ready for development with the following capabilities:
 
@@ -297,10 +378,12 @@ The app is ready for development with the following capabilities:
 4. ✅ Legendary override logic for Georgia state species
 5. ✅ Kids Mode with safety features and privacy controls
 6. ✅ Local storage with persistent journal
-7. ✅ Map with coarse location markers
-8. ✅ Debug logging for field testing
-9. ✅ Retake prompt for quality control
-10. ✅ Comprehensive documentation
+7. ✅ Map with **aggregate geocell markers** and leader lists
+8. ✅ **Regional leaderboards** by card count and points
+9. ✅ Debug logging for field testing
+10. ✅ Retake prompt for quality control
+11. ✅ **Privacy-first geocell system** (no precise locations)
+12. ✅ Comprehensive documentation
 
 ### Next Steps for Users
 
