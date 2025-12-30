@@ -12,6 +12,8 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - 📝 Journal with persistent capture history
 - 🗺️ Map with coarse location markers (~1km geocells)
 - 👶 Kids Mode with enhanced safety features
+- 💰 **Coin Economy**: Earn coins by minting cards (capturing insects)
+- 🔄 **Trading System**: List cards, propose swaps (1:1 or with coins), escrow support
 
 🎯 **Kids Mode Benefits:**
 - Quality floor locked at 0.9 minimum
@@ -27,6 +29,15 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
   - Epic points awarded otherwise, but Legendary badge retained
 - Species confirmation bonus: +30% points
 - Retake prompt for low-quality photos (sharpness < 0.9 or framing < 0.9)
+
+💸 **Economy System:**
+- Coins awarded when capturing insects (minting cards)
+- Base coin amounts by rarity (50-1500 base coins)
+- Quality multiplier affects coin rewards
+- User profile with coin balance synced to Firestore
+- Trading marketplace with escrow system
+- List cards for trade with coin offers
+- Accept/cancel trades with automatic coin transfers
 
 ## Prerequisites
 
@@ -46,7 +57,12 @@ Before you begin, ensure you have:
    - Create credentials → API Key
    - Restrict the key to Android apps (optional but recommended)
 
-4. **Physical Android Device or Emulator**
+4. **Firebase Project** (Optional for Economy/Trading)
+   - Required for cloud sync of coins and trades
+   - See `docs/firebase_setup.md` for detailed setup
+   - App works in offline mode without Firebase
+
+5. **Physical Android Device or Emulator**
    - Camera and location permissions required
    - Physical device recommended for best camera experience
 
@@ -72,13 +88,23 @@ Edit `android/app/src/main/res/values/strings.xml`:
 
 Replace `YOUR_ACTUAL_API_KEY_HERE` with your Google Maps API key.
 
-### 3. Install Dependencies
+### 3. (Optional) Configure Firebase
+
+For economy and trading features with cloud sync:
+
+1. Follow the detailed setup in `docs/firebase_setup.md`
+2. Download `google-services.json` from Firebase Console
+3. Place in `android/app/google-services.json`
+
+**Note:** App works without Firebase, but Economy/Trading features will show errors.
+
+### 4. Install Dependencies
 
 ```bash
 flutter pub get
 ```
 
-### 4. Connect Device or Start Emulator
+### 5. Connect Device or Start Emulator
 
 **For Physical Device:**
 ```bash
@@ -94,7 +120,7 @@ flutter devices  # Verify device is detected
 flutter devices  # Verify emulator is detected
 ```
 
-### 5. Build and Run
+### 6. Build and Run
 
 ```bash
 flutter run
@@ -119,11 +145,15 @@ Insect_quest/
 │   ├── pages/
 │   │   ├── camera_page.dart      # Camera preview, capture, and quality analysis
 │   │   ├── map_page.dart         # Google Maps with coarse location markers
-│   │   └── journal_page.dart     # List of captures with stats and flags
+│   │   ├── journal_page.dart     # List of captures with stats and flags
+│   │   ├── economy_page.dart     # Coin balance and economy overview
+│   │   └── trading_page.dart     # Trading marketplace for card swaps
 │   ├── services/
 │   │   ├── catalog_service.dart  # Species catalog loader and lookup
 │   │   ├── ml_stub.dart          # Identification stub (heuristic-based)
-│   │   └── settings_service.dart # Persistent settings (Kids Mode)
+│   │   ├── settings_service.dart # Persistent settings (Kids Mode)
+│   │   ├── firestore_service.dart # Firebase cloud storage for coins/trades
+│   │   └── user_service.dart     # User ID management
 │   └── assets/
 │       └── catalogs/
 │           └── species_catalog_ga.json  # North Georgia species catalog
@@ -136,7 +166,9 @@ Insect_quest/
 │                   └── values/
 │                       └── strings.xml   # Google Maps API key resource
 └── docs/
-    └── dev-instructions.md       # Detailed development instructions
+    ├── dev-instructions.md       # Detailed development instructions
+    ├── firebase_setup.md         # Firebase/Firestore configuration guide
+    └── theming.md                # UI customization for economy features
 ```
 
 ## How to Use
@@ -150,7 +182,7 @@ Insect_quest/
 5. **Quality Check**: If quality is low, you'll be prompted to retake
 6. **Species Suggestion**: Review and select from suggested species or keep genus-only
 7. **Safety Tips**: If it's a spider and Kids Mode is on, you'll see a safety banner
-8. **Capture Saved**: Points awarded and added to your journal!
+8. **Capture Saved**: Points and coins awarded and added to your journal!
 
 ### Viewing the Map
 
@@ -163,8 +195,24 @@ Insect_quest/
 
 1. **Navigate to the Journal Tab** (book icon)
 2. **Toggle Kids Mode** from the app bar if desired
-3. **Scroll through captures** with photos, stats, and badges
+3. **Scroll through captures** with photos, stats, and badges (including coins earned)
 4. **Pull down** to refresh the list
+
+### Managing Your Economy
+
+1. **Navigate to the Economy Tab** (wallet icon)
+2. **View your coin balance** synced to Firestore
+3. **Learn about earning coins** from the info card
+4. **Access trading** via the Trading button
+
+### Trading Cards
+
+1. **From Economy page**, tap "Trading" or navigate to Trading page
+2. **View Available Trades** tab to see other players' listings
+3. **Create a trade**: Tap FAB (+), select card, set coin amounts
+4. **Accept a trade**: Tap "Accept" on any listing, coins locked in escrow
+5. **Manage your trades**: View "My Trades" tab, cancel if needed
+6. **Complete trades**: Cards and coins transfer automatically
 
 ## Troubleshooting
 
@@ -194,6 +242,17 @@ Insect_quest/
 - SharedPreferences is used for storage
 - Clear app data: Settings → Apps → InsectQuest → Clear Data
 - Check for storage permission issues
+
+**Economy/Trading not working:**
+- Check Firebase setup in `docs/firebase_setup.md`
+- Verify `google-services.json` is in `android/app/`
+- Check Firestore security rules
+- App works offline but Economy features require Firebase
+
+**"Insufficient coins" error:**
+- Check your coin balance in Economy tab
+- Capture more insects to earn coins
+- Verify Firestore sync is working
 
 ## Development
 
@@ -242,6 +301,26 @@ Base Points × Rarity Multiplier × Quality Multiplier [× 1.30 if species confi
 - Epic: 180 base, 4.0x multiplier
 - Legendary: 250 base, 6.0x multiplier
 
+### Coin Calculation
+
+```
+Base Coins × Rarity Multiplier × Quality Multiplier
+```
+
+**Base Coin Rewards:**
+- Common: 50 coins (50-57 after quality)
+- Uncommon: 112 coins (95-129 after quality)
+- Rare: 300 coins (255-345 after quality)
+- Epic: 720 coins (612-828 after quality)
+- Legendary: 1500 coins (1275-1725 after quality)
+
+### Trading System
+
+- **Listing**: Players list cards with optional coin offers/requests
+- **Escrow**: When trade accepted, requested coins locked
+- **Completion**: Cards swap, coins transfer atomically
+- **Cancellation**: Escrowed coins refunded to buyer
+
 ### Coarse Location
 
 Coordinates are rounded to 0.01° (~1km) for privacy:
@@ -253,7 +332,7 @@ lonRounded = (lon * 100).round() / 100.0
 ## Future Enhancements (Post-MVP)
 
 - [ ] Server-side verification of photos
-- [ ] Trading system for duplicate captures
+- [x] Trading system for duplicate captures (MVP implemented!)
 - [ ] In-app purchases for premium features
 - [ ] Events and challenges
 - [ ] iOS support (TestFlight)
