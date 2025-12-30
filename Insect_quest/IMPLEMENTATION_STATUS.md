@@ -348,6 +348,122 @@ Beyond the 11 tasks, the following were also created:
 
 ---
 
+## ✅ Task 11: Daily/Weekly Quests, Streaks, and Achievements System
+**Status:** COMPLETE
+
+Implemented a comprehensive quest engine for ongoing user engagement:
+
+### Quest System
+- ✅ **Quest Models and Types**
+  - `Quest` model with daily/weekly periods
+  - Quest types: captureAny, captureGroup, captureTier, captureSpecific, captureCount, captureQuality
+  - Progress tracking with target goals
+  - Coin rewards and foil card chances
+  - Expiration tracking and cleanup
+
+- ✅ **Quest Service** (`lib/services/quest_service.dart`)
+  - Automatic quest generation (3 daily + 2 weekly)
+  - Daily refresh at midnight
+  - Weekly refresh on Mondays
+  - Progress tracking on each capture
+  - Unique group tracking for diversity quests
+  - Quest completion detection
+  - Reward claiming system
+
+- ✅ **Sample Quests**
+  - Daily: "Daily Explorer" - photograph any insect
+  - Daily: "Pollinator Patrol" - capture 2 pollinators
+  - Daily: "Urban Hunter" - find 3 insects in urban areas
+  - Weekly: "Diversity Champion" - capture 5 different groups (foil reward)
+  - Weekly: "Quality Photographer" - capture 3 high-quality photos
+
+### Streak System
+- ✅ **Streak Model** (`lib/models/streak.dart`)
+  - Current streak counter
+  - Longest streak record
+  - Last activity date tracking
+
+- ✅ **Streak Service** (`lib/services/streak_service.dart`)
+  - Daily streak increment on captures
+  - Automatic streak reset if day is skipped
+  - Persistent streak storage
+  - Longest streak tracking
+
+### Achievement System
+- ✅ **Achievement Model** (`lib/models/achievement.dart`)
+  - Multiple achievement types: setCompletion, regionCompletion, habitatCompletion, milestone, streak
+  - Unlock status and timestamp
+  - Coin rewards for achievements
+
+- ✅ **Achievement Service** (`lib/services/achievement_service.dart`)
+  - 10+ predefined achievements
+  - Set completion tracking (Butterfly Collector, Bee Keeper, Spider Expert)
+  - Milestone tracking (First Capture, 10/50/100 captures)
+  - Streak achievements (7-day, 30-day)
+  - Region/habitat achievements
+  - Auto-check on each capture
+
+- ✅ **Achievement Types**
+  - Set Completion: Complete all species in a group
+  - Milestones: Reach capture count targets
+  - Streaks: Maintain daily exploration streaks
+  - Region: Capture in specific regions
+
+### Currency System
+- ✅ **Coin Service** (`lib/services/coin_service.dart`)
+  - Persistent coin balance
+  - Add/spend coins functionality
+  - Quest reward distribution
+  - Achievement reward distribution
+
+### User Interface
+- ✅ **Quests Page** (`lib/pages/quests_page.dart`)
+  - Dedicated Quests tab in navigation
+  - Daily quests section with countdown
+  - Weekly quests section
+  - Progress bars for each quest
+  - Claim rewards button for completed quests
+  - Coin balance display
+  - Time remaining indicators
+  - Completed/expired quest badges
+
+- ✅ **Enhanced Journal Page**
+  - Profile stats card with:
+    - Total captures count
+    - Current coin balance
+    - Current streak with fire emoji
+    - Achievement progress
+  - Clickable streak stat → Streak details dialog
+  - Clickable achievement stat → Achievement list dialog
+  - Achievement trophy button in app bar
+  - Longest streak display
+
+- ✅ **Integration with Captures**
+  - Quest progress updates on each capture
+  - Streak updates on daily captures
+  - Achievement checks on captures
+  - Combined notification system
+  - Reward dialog for completed quests/achievements
+
+### Initialization
+- ✅ Quest system initialization in main.dart
+- ✅ Automatic quest refresh on app start
+- ✅ Expired quest cleanup
+
+**Files:**
+- `lib/models/quest.dart` - Quest data model
+- `lib/models/streak.dart` - Streak data model
+- `lib/models/achievement.dart` - Achievement data model
+- `lib/services/quest_service.dart` - Quest management logic
+- `lib/services/streak_service.dart` - Streak tracking logic
+- `lib/services/achievement_service.dart` - Achievement tracking logic
+- `lib/services/coin_service.dart` - Currency management
+- `lib/pages/quests_page.dart` - Quests UI page
+- `lib/pages/journal_page.dart` - Enhanced with stats and achievements
+- `lib/pages/camera_page.dart` - Integration with quest/streak/achievement updates
+- `lib/main.dart` - Quest system initialization and navigation
+
+**Definition of Done:** ✅ Engine supports multiple quest types, completions, and streak logic; Quest UI shows progress and rewards; Streak and achievements shown in profile; Quest rewards grant coins
 ## ✅ Enhancement: Geocell Map Aggregation and Regional Leaderboards
 **Status:** COMPLETE
 
@@ -431,6 +547,7 @@ Beyond the 11 tasks, the following were also created:
 
 ## Summary
 
+**All 11 tasks are COMPLETE! ✅**
 copilot/add-geocell-map-and-leaderboards
 
 **All 10 original tasks + geocell enhancements are COMPLETE! ✅**
@@ -446,6 +563,11 @@ The app is ready for development with the following capabilities:
 4. ✅ Legendary override logic for Georgia state species
 5. ✅ Kids Mode with safety features and privacy controls
 6. ✅ Local storage with persistent journal
+7. ✅ Map with coarse location markers
+8. ✅ Debug logging for field testing
+9. ✅ Retake prompt for quality control
+10. ✅ Comprehensive documentation
+11. ✅ **Daily/Weekly Quests, Streaks, and Achievements System**
 
 copilot/add-geocell-map-and-leaderboards
 7. ✅ Map with **aggregate geocell markers** and leader lists
@@ -469,7 +591,7 @@ copilot/add-geocell-map-and-leaderboards
 3. Add Google Maps API key to `android/app/src/main/res/values/strings.xml`
 4. Run `flutter pub get`
 5. Run `flutter run`
-6. Start capturing insects! 🐛🦋🐝
+6. Start capturing insects and completing quests! 🐛🦋🐝🎯
 
 ### Future Enhancements (Post-MVP)
 

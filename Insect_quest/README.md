@@ -13,6 +13,33 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - 🗺️ Map with coarse location markers (~1km geocells)
 - 🏆 Regional leaderboards by card count and points
 - 👶 Kids Mode with enhanced safety features
+- 🎯 Daily and Weekly Quests for ongoing engagement
+- 🔥 Streak tracking system
+- 🏆 Achievement system with set/milestone completions
+- 💰 Coin economy for quest rewards
+
+🎯 **Quest System:**
+- Daily quests refresh every day at midnight
+- Weekly quests refresh every Monday
+- Quest types:
+  - Capture any insect
+  - Capture specific groups (pollinators, urban species, etc.)
+  - Capture with quality thresholds
+  - Diversity challenges (unique groups)
+- Rewards: Coins and foil card chances
+- Real-time progress tracking
+- Claim rewards when quests are completed
+
+🔥 **Streak & Achievements:**
+- Track consecutive days of exploration
+- View current and longest streak
+- 10+ achievements to unlock
+- Set completion achievements (Butterflies, Bees, Spiders)
+- Milestone achievements (10, 50, 100 captures)
+- Streak achievements (7-day, 30-day)
+- Achievement rewards contribute to coin balance
+
+👶 **Kids Mode Benefits:**
 - 🛡️ Anti-cheat system with EXIF, duplicate detection, and optional liveness checks
 
 🎯 **Kids Mode Benefits:**
