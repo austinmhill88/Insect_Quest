@@ -164,6 +164,7 @@ class _CameraPageState extends State<CameraPage> {
       }
     }
 
+    // Location - use only coarse geocell coordinates (no precise locations saved)
     // Anti-cheat validation
     Map<String, dynamic> validationResult = {
       'validationStatus': AntiCheatService.validationValid,
@@ -230,12 +231,17 @@ class _CameraPageState extends State<CameraPage> {
 
     // Location
     final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
-    final lat = pos.latitude;
-    final lon = pos.longitude;
-    final geocell = _geocell(lat, lon);
+    final preciseLatitude = pos.latitude;
+    final preciseLongitude = pos.longitude;
+    final geocell = _geocell(preciseLatitude, preciseLongitude);
+    
+    // Parse geocell to get coarse coordinates (these are the only ones we save)
+    final geocellParts = geocell.split(',');
+    final coarseLat = double.parse(geocellParts[0]);
+    final coarseLon = double.parse(geocellParts[1]);
 
-    // Identification stub
-    final analysis = await ml.analyze(imagePath: file.path, lat: lat, lon: lon);
+    // Identification stub (uses precise location for better suggestions, but doesn't save it)
+    final analysis = await ml.analyze(imagePath: file.path, lat: preciseLatitude, lon: preciseLongitude);
     final genus = analysis["genus"] as String;
     final candidates = List<Map<String, dynamic>>.from(analysis["species_candidates"]);
 
@@ -369,13 +375,13 @@ class _CameraPageState extends State<CameraPage> {
     debugPrint("Points: $pts");
     debugPrint("Anti-cheat: status=${validationResult['validationStatus']} hash=${validationResult['photoHash']} hasExif=${validationResult['hasExif']} liveness=$livenessVerified");
 
-    // Build capture
+    // Build capture (only coarse geocell coordinates saved, not precise location)
     final cap = Capture(
       id: const Uuid().v4(),
       photoPath: file.path,
       timestamp: DateTime.now(),
-      lat: lat,
-      lon: lon,
+      lat: coarseLat,  // Coarse coordinate from geocell
+      lon: coarseLon,  // Coarse coordinate from geocell
       geocell: geocell,
       group: group,
       genus: genus,
