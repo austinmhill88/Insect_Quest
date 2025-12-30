@@ -50,8 +50,14 @@ class QuestService {
   static Future<void> refreshQuests() async {
     final now = DateTime.now();
     final dailyExpiry = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    final weekdayToMonday = (now.weekday - DateTime.monday) % 7;
-    final weeklyExpiry = DateTime(now.year, now.month, now.day + (7 - weekdayToMonday), 23, 59, 59);
+    
+    // Calculate next Monday at 23:59:59 for weekly expiry
+    int daysUntilMonday = (DateTime.monday - now.weekday) % 7;
+    if (daysUntilMonday == 0) {
+      // If today is Monday, expire next Monday (7 days from now)
+      daysUntilMonday = 7;
+    }
+    final weeklyExpiry = DateTime(now.year, now.month, now.day + daysUntilMonday, 23, 59, 59);
 
     // Generate 3 daily quests and 2 weekly quests
     final quests = <Quest>[
@@ -174,13 +180,18 @@ class QuestService {
         case QuestType.captureCount:
           final uniqueGroupsRequired = quest.requirements["uniqueGroups"] as bool? ?? false;
           if (uniqueGroupsRequired) {
-            // For diversity quests, update progress based on unique groups count
-            quest.progress = uniqueGroups.length;
+            // For diversity quests, progress is the total count of unique groups
+            // captured so far (from all historical captures)
+            final newProgress = uniqueGroups.length;
+            if (newProgress > quest.progress) {
+              quest.progress = newProgress;
+              progressMade = true;
+            }
           } else {
             // For regular count quests, increment on any capture
             quest.progress++;
+            progressMade = true;
           }
-          progressMade = true;
           break;
 
         case QuestType.captureSpecific:

@@ -203,8 +203,9 @@ class AchievementService {
     
     if (region == null) return false;
     
-    // For now, we don't have region data in captures
+    // TODO: Region data not yet implemented in Capture model
     // This is a placeholder that counts all captures
+    // Future enhancement: Add region field to Capture and filter by it
     return captures.length >= requiredCount;
   }
 
@@ -214,7 +215,9 @@ class AchievementService {
     
     if (habitat == null) return false;
     
-    // Placeholder - habitat data not yet in capture model
+    // TODO: Habitat data not yet implemented in Capture model
+    // This is a placeholder that counts all captures
+    // Future enhancement: Add habitat field to Capture and filter by it
     return captures.length >= requiredCount;
   }
 }
