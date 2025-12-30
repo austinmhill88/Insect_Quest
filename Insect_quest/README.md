@@ -9,6 +9,7 @@ An Android-only MVP Flutter application for discovering and cataloging insects a
 - 🔍 On-device identification stub (genus-first approach with species suggestions)
 - ⭐ Rarity-based point system (Common to Legendary tiers)
 - 📊 Photo quality multiplier (0.85-1.15x)
+- 🎴 **Critter Codex** - Visual card collection grid with advanced filters
 - 📝 Journal with persistent capture history
 - 🗺️ Map with coarse location markers (~1km geocells)
 - 🏆 Regional leaderboards by card count and points
@@ -208,6 +209,23 @@ Insect_quest/
 4. **Each entry shows** card count, unique species, and total points
 5. **Tap any region** to see detailed capture list
 6. **Kids Mode**: Leaderboards are hidden for privacy
+
+### Browsing the Critter Codex
+
+1. **Navigate to the Codex Tab** (card icon)
+2. **Browse your collection** in a visual card grid layout
+3. **Use filters** to find specific cards:
+   - Search by genus or species name
+   - Filter by rarity tier (Common, Uncommon, Rare, Epic, Legendary)
+   - Filter by genus
+4. **Tap any card** to view detailed information including:
+   - Full-size photo
+   - Stats (points, quality, taxonomic info)
+   - Location details
+   - Collection timestamp
+   - Special traits and badges
+5. **Pull down to refresh** or use the refresh button to update the collection
+6. **Clear filters** to see your full collection again
 
 ### Reviewing Your Journal
 
