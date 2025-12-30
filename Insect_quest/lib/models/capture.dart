@@ -2,9 +2,9 @@ class Capture {
   final String id;
   final String photoPath;
   final DateTime timestamp;
-  final double lat;
-  final double lon;
-  final String geocell; // coarse location string
+  final double lat; // Coarse latitude from geocell (0.01° precision)
+  final double lon; // Coarse longitude from geocell (0.01° precision)
+  final String geocell; // coarse location string (e.g., "34.00,-84.00")
   final String group;   // e.g., Butterflies
   final String genus;
   final String? species;
@@ -12,6 +12,10 @@ class Capture {
   final Map<String, bool> flags; // state_species, invasive, venomous
   final int points;
   final double quality;
+  final String? validationStatus; // "valid", "flagged", "rejected"
+  final String? photoHash; // perceptual hash for duplicate detection
+  final bool hasExif; // whether photo has valid EXIF data
+  final bool livenessVerified; // whether liveness check was passed
 
   Capture({
     required this.id,
@@ -27,6 +31,10 @@ class Capture {
     required this.flags,
     required this.points,
     required this.quality,
+    this.validationStatus,
+    this.photoHash,
+    this.hasExif = true,
+    this.livenessVerified = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +51,10 @@ class Capture {
         "flags": flags,
         "points": points,
         "quality": quality,
+        "validationStatus": validationStatus,
+        "photoHash": photoHash,
+        "hasExif": hasExif,
+        "livenessVerified": livenessVerified,
       };
 
   static Capture fromJson(Map<String, dynamic> m) => Capture(
@@ -59,5 +71,9 @@ class Capture {
         flags: Map<String, bool>.from(m["flags"] ?? {}),
         points: m["points"],
         quality: m["quality"],
+        validationStatus: m["validationStatus"],
+        photoHash: m["photoHash"],
+        hasExif: m["hasExif"] ?? true,
+        livenessVerified: m["livenessVerified"] ?? false,
       );
 }
