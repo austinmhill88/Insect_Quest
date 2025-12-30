@@ -3,13 +3,19 @@ import 'package:provider/provider.dart';
 import 'pages/camera_page.dart';
 import 'pages/map_page.dart';
 import 'pages/journal_page.dart';
+import 'pages/quests_page.dart';
 import 'services/catalog_service.dart';
+import 'services/quest_service.dart';
 import 'config/feature_flags.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final catalogService = CatalogService();
   await catalogService.loadCatalog();
+  
+  // Initialize quest system
+  await QuestService.initialize();
+  
   runApp(InsectQuestApp(catalogService: catalogService));
 }
 
@@ -44,6 +50,7 @@ class _HomeNavState extends State<HomeNav> {
       CameraPage(catalogService: widget.catalogService),
       const MapPage(),
       const JournalPage(),
+      const QuestsPage(),
     ];
     super.initState();
   }
@@ -58,6 +65,7 @@ class _HomeNavState extends State<HomeNav> {
           NavigationDestination(icon: Icon(Icons.camera_alt), label: 'Capture'),
           NavigationDestination(icon: Icon(Icons.map), label: 'Map'),
           NavigationDestination(icon: Icon(Icons.book), label: 'Journal'),
+          NavigationDestination(icon: Icon(Icons.emoji_events), label: 'Quests'),
         ],
         onDestinationSelected: (i) => setState(() => index = i),
       ),

@@ -11,6 +11,9 @@ import '../models/capture.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../services/quest_service.dart';
+import '../services/streak_service.dart';
+import '../services/achievement_service.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -291,9 +294,91 @@ class _CameraPageState extends State<CameraPage> {
 
     // Save and navigate to Journal
     await JournalPage.saveCapture(cap);
+    
+    // Update quest progress
+    final completedQuests = await QuestService.updateQuestProgress(cap);
+    
+    // Update streak
+    final newStreak = await StreakService.updateStreak();
+    
+    // Check achievements
+    final captures = await JournalPage.loadCaptures();
+    final unlockedAchievements = await AchievementService.checkAchievements(captures, newStreak);
+    
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Saved capture (+$pts pts)")));
+      String message = "Saved capture (+$pts pts)";
+      
+      // Add quest completion notifications
+      if (completedQuests.isNotEmpty) {
+        message += "\n🎯 Quest completed!";
+      }
+      
+      // Add streak notification
+      if (newStreak.currentStreak > 1) {
+        message += "\n🔥 ${newStreak.currentStreak} day streak!";
+      }
+      
+      // Add achievement notifications
+      if (unlockedAchievements.isNotEmpty) {
+        message += "\n🏆 Achievement unlocked!";
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      
+      // Show detailed quest/achievement notifications
+      if (completedQuests.isNotEmpty || unlockedAchievements.isNotEmpty) {
+        _showRewardsDialog(completedQuests, unlockedAchievements);
+      }
     }
+  }
+  
+  void _showRewardsDialog(List<dynamic> completedQuests, List<dynamic> achievements) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🎉 Rewards!'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (completedQuests.isNotEmpty) ...[
+                const Text(
+                  'Quests Completed:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...completedQuests.map((q) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('• ${q.title}'),
+                )),
+                const SizedBox(height: 8),
+              ],
+              if (achievements.isNotEmpty) ...[
+                const Text(
+                  'Achievements Unlocked:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...achievements.map((a) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('• ${a.title}'),
+                )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Awesome!'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
