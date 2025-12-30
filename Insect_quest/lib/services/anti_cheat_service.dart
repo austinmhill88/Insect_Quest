@@ -190,8 +190,12 @@ class AntiCheatService {
         final val1 = int.parse(hash1[i], radix: 16);
         final val2 = int.parse(hash2[i], radix: 16);
         final xor = val1 ^ val2;
-        // Count set bits
-        distance += xor.bitLength;
+        // Count set bits using Brian Kernighan's algorithm
+        int bits = xor;
+        while (bits > 0) {
+          distance++;
+          bits &= bits - 1; // Clear the lowest set bit
+        }
       }
     }
     return distance;
@@ -287,8 +291,8 @@ class AntiCheatService {
       rejectionReason = 'Invalid or missing EXIF data';
     }
     
-    // Store hash if valid or flagged (not rejected for other reasons)
-    if (validationStatus != validationRejected || !isDupe) {
+    // Store hash if valid or flagged (not if rejected)
+    if (validationStatus != validationRejected) {
       await storePhotoHash(photoHash);
     }
     

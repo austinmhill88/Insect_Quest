@@ -44,6 +44,9 @@ class _LivenessDialog extends StatefulWidget {
 }
 
 class _LivenessDialogState extends State<_LivenessDialog> {
+  static const Duration _movementStepDuration = Duration(seconds: 3);
+  static const Duration _successDisplayDuration = Duration(seconds: 1);
+  
   bool _verifying = false;
   String _instruction = 'Slowly move your camera left, then right';
   int _step = 0;
@@ -70,7 +73,7 @@ class _LivenessDialogState extends State<_LivenessDialog> {
     // Simulate liveness detection with timed prompts
     // In a production app, this would analyze accelerometer data
     // or use computer vision to detect actual movement
-    _timer = Timer(const Duration(seconds: 3), () {
+    _timer = Timer(_movementStepDuration, () {
       if (!mounted) return;
       
       setState(() {
@@ -78,7 +81,7 @@ class _LivenessDialogState extends State<_LivenessDialog> {
         _instruction = 'Good! Now move it right...';
       });
       
-      _timer = Timer(const Duration(seconds: 3), () {
+      _timer = Timer(_movementStepDuration, () {
         if (!mounted) return;
         
         setState(() {
@@ -88,7 +91,7 @@ class _LivenessDialogState extends State<_LivenessDialog> {
         });
         
         // Auto-close after showing success
-        _timer = Timer(const Duration(seconds: 1), () {
+        _timer = Timer(_successDisplayDuration, () {
           if (mounted) {
             Navigator.of(context).pop(true);
           }
