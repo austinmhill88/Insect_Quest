@@ -690,6 +690,81 @@ copilot/add-geocell-map-and-leaderboards
 7. Start capturing insects and completing quests! 🐛🦋🐝
 6. Start capturing insects and completing quests! 🐛🦋🐝🎯
 
+---
+
+## ✅ Task 11: Genus-first Identification Service (On-device)
+**Status:** COMPLETE
+
+Implemented a genus-first identification service stub with ML-ready architecture.
+
+### Implementation Details
+
+- ✅ **IdentifierService class** (`lib/services/identifier_service.dart`)
+  - Returns 3-5 genus suggestions after photo capture
+  - Heuristic-based stub for MVP (location-aware, state species preference)
+  - Ready for TFLite model integration
+  - Ready for cloud classifier fallback
+  
+- ✅ **GenusSuggestion model** (`lib/models/genus_suggestion.dart`)
+  - Data structure for genus identification results
+  - Includes genus, confidence, common name, group
+  - JSON serialization support
+
+- ✅ **Genus-first UI flow** (in `camera_page.dart`)
+  - Step 1: Show 3-5 genus suggestions with confidence scores
+  - Step 2: User selects genus or enters manually
+  - Step 3: User optionally specifies species or keeps genus-only
+  - Integrates with existing quality checks and scoring
+
+- ✅ **Kids Mode safety filtering**
+  - Automatically filters spider genera (Phidippus, Argiope, Trichonephila)
+  - Filters centipede genera (Scutigera)
+  - Configurable filter lists in `IdentifierService`
+  - Ensures minimum 3 safe suggestions
+
+- ✅ **Comprehensive documentation** (`docs/identifier_service.md`)
+  - TFLite on-device model integration guide
+  - Cloud classifier fallback architecture
+  - Hybrid approach recommendations
+  - Model training tips and specifications
+  - API specification for cloud service
+  - Testing checklist and troubleshooting guide
+
+### User Flow
+
+1. **Photo Capture** → Camera captures insect photo
+2. **Quality Check** → Retake prompt if quality is low
+3. **Genus Suggestions** → 3-5 plausible genera shown with confidence
+4. **Genus Selection** → User selects or manually enters genus
+5. **Species Input** → User optionally specifies species (or keeps genus-only)
+6. **Safety Check** → Kids Mode shows safety tips for spiders if needed
+7. **Card Minting** → Capture saved with points awarded
+
+### ML Model Integration Points
+
+The service is designed for easy ML model replacement:
+
+```dart
+// Current: Stub implementation
+Future<List<GenusSuggestion>> identifyGenus(...) async {
+  return await _generateGenusStub(lat, lon);
+}
+
+// Future: TFLite model
+Future<List<GenusSuggestion>> identifyGenus(...) async {
+  return await _identifyOnDevice(imagePath);
+}
+
+// Future: Cloud fallback
+Future<List<GenusSuggestion>> identifyGenus(...) async {
+  return await _identifyViaCloud(imagePath, lat, lon);
+}
+```
+
+**Definition of Done:** ✅ After photo capture, 3-5 genus suggestions appear; User can select/override genus; User can input species; Kids Mode filters unsafe genera; Integrates with capture minting process; Comprehensive docs for ML replacement
+
+---
+
 ### Future Enhancements (Post-MVP)
 
 The following are noted in the docs but NOT implemented (as intended):
@@ -699,6 +774,7 @@ The following are noted in the docs but NOT implemented (as intended):
 - ❌ Events
 - ❌ iOS support
 - ❌ TestFlight
+- 🔧 Machine learning model integration (architecture ready, awaiting trained model)
 - 💡 Multiple child profiles
 - 💡 Customizable difficulty levels
 - 💡 Parental dashboard
