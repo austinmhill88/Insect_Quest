@@ -74,7 +74,22 @@ class _JournalPageState extends State<JournalPage> {
               child: ListTile(
                 leading: Image.file(Uri.parse(c.photoPath).isAbsolute ? File(c.photoPath) : File(c.photoPath)),
                 title: Text(c.species ?? c.genus),
-                subtitle: Text("${c.group} • ${c.tier} • ${c.points} pts • ${c.geocell}"),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("${c.group} • ${c.tier} • ${c.points} pts • ${c.geocell}"),
+                    if (c.validationStatus == 'flagged')
+                      const Text(
+                        "⚠️ Flagged",
+                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                      ),
+                    if (c.livenessVerified)
+                      const Text(
+                        "✓ Liveness Verified",
+                        style: TextStyle(color: Colors.green, fontSize: 12),
+                      ),
+                  ],
+                ),
                 trailing: Wrap(
                   spacing: 6,
                   children: [
@@ -84,6 +99,8 @@ class _JournalPageState extends State<JournalPage> {
                       const Chip(label: Text("Invasive"), avatar: Icon(Icons.warning_amber_rounded, size: 16)),
                     if (c.flags["venomous"] == true)
                       const Chip(label: Text("Venomous"), avatar: Icon(Icons.health_and_safety, size: 16)),
+                    if (c.validationStatus == 'rejected')
+                      const Chip(label: Text("Rejected"), avatar: Icon(Icons.block, size: 16), backgroundColor: Colors.red),
                   ],
                 ),
               ),
