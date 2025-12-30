@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,9 +7,11 @@ import 'package:uuid/uuid.dart';
 import '../config/scoring.dart';
 import '../config/feature_flags.dart';
 import '../models/capture.dart';
+import '../models/quality_metrics.dart';
 import '../services/ml_stub.dart';
 import '../services/catalog_service.dart';
 import '../services/settings_service.dart';
+import '../widgets/camera_overlay.dart';
 import 'journal_page.dart';
 
 class CameraPage extends StatefulWidget {
@@ -53,65 +54,7 @@ class _CameraPageState extends State<CameraPage> {
     super.dispose();
   }
 
-  double _computeSharpness(img.Image im) {
-    // Laplacian-like measure (simple proxy)
-    double sum = 0;
-    for (int y = 1; y < im.height - 1; y += 10) {
-      for (int x = 1; x < im.width - 1; x += 10) {
-        final c = img.getLuminance(im.getPixel(x, y)).toDouble();
-        final up = img.getLuminance(im.getPixel(x, y - 1)).toDouble();
-        final dn = img.getLuminance(im.getPixel(x, y + 1)).toDouble();
-        final lf = img.getLuminance(im.getPixel(x - 1, y)).toDouble();
-        final rt = img.getLuminance(im.getPixel(x + 1, y)).toDouble();
-        final lap = (4 * c) - (up + dn + lf + rt);
-        sum += lap.abs();
-      }
-    }
-    // Normalize to 0.85–1.10 range
-    double s = 0.85 + min(sum / 500000.0, 0.25);
-    return s.clamp(0.85, 1.10);
-  }
 
-  double _computeExposure(img.Image im) {
-    int midtones = 0, total = 0;
-    for (int y = 0; y < im.height; y += 20) {
-      for (int x = 0; x < im.width; x += 20) {
-        final lum = img.getLuminance(im.getPixel(x, y));
-        total++;
-        if (lum > 60 && lum < 190) midtones++;
-      }
-    }
-    final ratio = midtones / max(total, 1);
-    double e = 0.90 + (ratio * 0.15); // 0.90–1.05
-    return e.clamp(0.90, 1.05);
-  }
-
-  double _computeFraming(img.Image im) {
-    // Heuristic: central crop brightness vs edges
-    final cx = im.width ~/ 2;
-    final cy = im.height ~/ 2;
-    int centerSum = 0, edgeSum = 0;
-    int centerCount = 0, edgeCount = 0;
-
-    for (int y = 0; y < im.height; y += 15) {
-      for (int x = 0; x < im.width; x += 15) {
-        final lum = img.getLuminance(im.getPixel(x, y));
-        final dist = sqrt(pow((x - cx).abs().toDouble(), 2) + pow((y - cy).abs().toDouble(), 2));
-        if (dist < min(im.width, im.height) * 0.25) {
-          centerSum += lum;
-          centerCount++;
-        } else {
-          edgeSum += lum;
-          edgeCount++;
-        }
-      }
-    }
-    final centerAvg = centerSum / max(centerCount, 1);
-    final edgeAvg = edgeSum / max(edgeCount, 1);
-    final ratio = centerAvg / max(edgeAvg, 1);
-    double f = 0.90 + min((ratio - 1.0) * 0.2, 0.25); // reward centered subject
-    return f.clamp(0.90, 1.15);
-  }
 
   String _geocell(double lat, double lon) {
     // Coarse ~1km cell using rounding
@@ -125,19 +68,17 @@ class _CameraPageState extends State<CameraPage> {
     final bytes = await File(file.path).readAsBytes();
     final im = img.decodeImage(bytes)!;
 
-    // Quality
-    final sharpness = _computeSharpness(im);
-    final exposure = _computeExposure(im);
-    final framing = _computeFraming(im);
+    // Quality analysis using modular QualityMetrics
+    final metrics = QualityMetrics.analyze(im);
     final qMult = Scoring.qualityMultiplier(
-      sharpness: sharpness,
-      exposure: exposure,
-      framing: framing,
+      sharpness: metrics.sharpness,
+      exposure: metrics.exposure,
+      framing: metrics.framing,
       kidsMode: kidsMode,
     );
 
-    // Task 10: Retake prompt for low-quality shots
-    if (sharpness < 0.9 || framing < 0.9) {
+    // Retake prompt for low-quality shots
+    if (!metrics.meetsThreshold(0.9)) {
       if (mounted) {
         final retake = await showDialog<bool>(
           context: context,
@@ -239,17 +180,27 @@ class _CameraPageState extends State<CameraPage> {
       // tier stays "Legendary" for badge display
     }
 
-    // Task 9: Kids Mode - Show safety tips banner for spiders
-    if (kidsMode && group != null && (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider"))) {
-      if (mounted) {
+    // Safety tips for spiders and centipedes in Kids Mode
+    if (kidsMode && group != null) {
+      bool showSafetyTip = false;
+      String safetyMessage = "";
+      
+      if (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider")) {
+        showSafetyTip = true;
+        safetyMessage = "Great find! Remember to observe spiders from a safe distance. "
+            "Never touch spiders with your bare hands. Some spiders can bite if they feel threatened.";
+      } else if (group == "Myriapods – Centipedes" || group.toLowerCase().contains("centipede")) {
+        showSafetyTip = true;
+        safetyMessage = "Great find! Remember to observe centipedes from a safe distance. "
+            "Never touch centipedes with your bare hands. Centipedes can bite and may cause irritation.";
+      }
+      
+      if (showSafetyTip && mounted) {
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text("🛡️ Safety Tip"),
-            content: const Text(
-              "Great find! Remember to observe spiders from a safe distance. "
-              "Never touch spiders with your bare hands. Some spiders can bite if they feel threatened."
-            ),
+            content: Text(safetyMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -268,7 +219,7 @@ class _CameraPageState extends State<CameraPage> {
       firstGenus: false, // MVP: no novelty tracking
     );
 
-    debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
+    debugPrint("Quality: ${metrics.toString()} qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
     debugPrint("Points: $pts");
 
@@ -302,6 +253,12 @@ class _CameraPageState extends State<CameraPage> {
     return Stack(
       children: [
         CameraPreview(controller!),
+        // Kids Mode banner
+        if (kidsMode) const KidsModeBanner(),
+        // Enhanced camera overlay with guidance
+        IgnorePointer(
+          child: CameraOverlay(showTips: true),
+        ),
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
@@ -323,19 +280,6 @@ class _CameraPageState extends State<CameraPage> {
                   onPressed: _capture,
                 ),
               ],
-            ),
-          ),
-        ),
-        // Simple framing overlay
-        IgnorePointer(
-          child: Center(
-            child: Container(
-              width: 240,
-              height: 240,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
             ),
           ),
         ),

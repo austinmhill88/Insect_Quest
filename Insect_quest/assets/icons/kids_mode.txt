@@ -1,0 +1,12 @@
+PLACEHOLDER: Kids Mode Safety Icon
+===================================
+
+This is a placeholder for a Kids Mode safety icon.
+
+When ready to implement:
+- Replace with an actual icon file (PNG/SVG)
+- Recommended size: 24x24dp or vector format
+- Design: Child-friendly safety/shield icon
+- Color: Blue or green for safety theme
+
+Current implementation uses Flutter's built-in Icons.child_care
