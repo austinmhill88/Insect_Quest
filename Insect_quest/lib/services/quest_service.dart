@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import '../models/quest.dart';
 import '../models/capture.dart';
 
 class QuestService {
   static const _progressKey = "quest_progress";
+  static const _questsKey = "quests";
+  static const _lastRefreshKey = "last_quest_refresh";
+  static const _uuid = Uuid();
 
   // Predefined quests - safe quests are kid-friendly
   static final List<Quest> allQuests = [
@@ -206,12 +210,7 @@ class QuestService {
   static Future<QuestProgress?> getQuestProgress(String questId) async {
     final progress = await loadProgress();
     return progress[questId];
-import 'package:uuid/uuid.dart';
-
-class QuestService {
-  static const _questsKey = "quests";
-  static const _lastRefreshKey = "last_quest_refresh";
-  static const _uuid = Uuid();
+  }
 
   // Load saved quests from storage
   static Future<List<Quest>> loadQuests() async {
