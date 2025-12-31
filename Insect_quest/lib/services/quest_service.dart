@@ -13,7 +13,7 @@ class QuestService {
   // Predefined quests - safe quests are kid-friendly
   static final List<Quest> allQuests = [
     // Safe learning quests for kids
-    const Quest(
+    Quest.legacy(
       id: "butterfly_beginner",
       title: "Butterfly Beginner",
       description: "Photograph 3 butterflies and learn about their wings!",
@@ -24,7 +24,7 @@ class QuestService {
       rewardPoints: 100,
       emoji: "🦋",
     ),
-    const Quest(
+    Quest.legacy(
       id: "bee_buddy",
       title: "Bee Buddy",
       description: "Find and photograph 2 bees. They help plants grow!",
@@ -35,7 +35,7 @@ class QuestService {
       rewardPoints: 100,
       emoji: "🐝",
     ),
-    const Quest(
+    Quest.legacy(
       id: "beetle_explorer",
       title: "Beetle Explorer",
       description: "Discover 2 different beetles in your area",
@@ -46,7 +46,7 @@ class QuestService {
       rewardPoints: 100,
       emoji: "🪲",
     ),
-    const Quest(
+    Quest.legacy(
       id: "first_five",
       title: "First Five Friends",
       description: "Capture your first 5 insects! Great start!",
@@ -56,7 +56,7 @@ class QuestService {
       rewardPoints: 150,
       emoji: "⭐",
     ),
-    const Quest(
+    Quest.legacy(
       id: "diversity_junior",
       title: "Diversity Explorer",
       description: "Find insects from 3 different groups",
@@ -68,7 +68,7 @@ class QuestService {
     ),
     
     // Advanced quests (not necessarily unsafe, but more challenging)
-    const Quest(
+    Quest.legacy(
       id: "spider_watcher",
       title: "Spider Watcher",
       description: "Observe and photograph 3 spiders safely from a distance",
@@ -79,7 +79,7 @@ class QuestService {
       rewardPoints: 150,
       emoji: "🕷️",
     ),
-    const Quest(
+    Quest.legacy(
       id: "collector_pro",
       title: "Collector Pro",
       description: "Capture 20 total insects",
@@ -89,7 +89,7 @@ class QuestService {
       rewardPoints: 300,
       emoji: "🏆",
     ),
-    const Quest(
+    Quest.legacy(
       id: "state_species_hunter",
       title: "State Species Hunter",
       description: "Find a Georgia state species!",
