@@ -16,14 +16,48 @@ class Quest {
   final String id;
   final String title;
   final String description;
-  final String category; // "collection", "learning", "exploration"
-  final int targetCount;
-  final String? targetGroup; // null for any
+  // Support both old and new quest systems
+  final String? category; // "collection", "learning", "exploration" (old system)
+  final int? targetCount; // old system
+  final String? targetGroup; // null for any (old system)
   final bool safeForKids;
-  final int rewardPoints;
-  final String emoji;
+  final int? rewardPoints; // old system
+  final String? emoji; // old system
+  // New quest system fields
+  final QuestType? type;
+  final QuestPeriod? period;
+  final Map<String, dynamic>? requirements;
+  final int? coinReward;
+  final bool? foilReward;
+  final DateTime? expiresAt;
+  int progress;
+  int? target;
+  bool completed;
+  bool claimed;
 
-  const Quest({
+  Quest({
+    required this.id,
+    required this.title,
+    required this.description,
+    this.category,
+    this.targetCount,
+    this.targetGroup,
+    this.safeForKids = false,
+    this.rewardPoints,
+    this.emoji,
+    this.type,
+    this.period,
+    this.requirements,
+    this.coinReward,
+    this.foilReward = false,
+    this.expiresAt,
+    this.progress = 0,
+    this.target,
+    this.completed = false,
+    this.claimed = false,
+  });
+
+  const Quest.legacy({
     required this.id,
     required this.title,
     required this.description,
@@ -33,34 +67,39 @@ class Quest {
     required this.safeForKids,
     required this.rewardPoints,
     required this.emoji,
-  final QuestType type;
-  final QuestPeriod period;
-  final Map<String, dynamic> requirements; // e.g., {"group": "Butterflies", "count": 3}
-  final int coinReward;
-  final bool foilReward;
-  final DateTime expiresAt;
-  int progress;
-  int target;
-  bool completed;
-  bool claimed;
+  })  : type = null,
+        period = null,
+        requirements = null,
+        coinReward = null,
+        foilReward = null,
+        expiresAt = null,
+        progress = 0,
+        target = null,
+        completed = false,
+        claimed = false;
 
-  Quest({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.period,
-    required this.requirements,
-    required this.coinReward,
-    this.foilReward = false,
-    required this.expiresAt,
-    this.progress = 0,
-    required this.target,
-    this.completed = false,
-    this.claimed = false,
-  });
-
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() {
+    // Support both old and new quest formats
+    if (type != null) {
+      // New format
+      return {
+        "id": id,
+        "title": title,
+        "description": description,
+        "type": type!.name,
+        "period": period!.name,
+        "requirements": requirements,
+        "coinReward": coinReward,
+        "foilReward": foilReward,
+        "expiresAt": expiresAt?.toIso8601String(),
+        "progress": progress,
+        "target": target,
+        "completed": completed,
+        "claimed": claimed,
+      };
+    } else {
+      // Old format (legacy)
+      return {
         "id": id,
         "title": title,
         "description": description,
@@ -71,18 +110,71 @@ class Quest {
         "rewardPoints": rewardPoints,
         "emoji": emoji,
       };
+    }
+  }
 
-  static Quest fromJson(Map<String, dynamic> json) => Quest(
+  static Quest fromJson(Map<String, dynamic> json) {
+    // Detect which format based on presence of 'type' field
+    if (json.containsKey("type")) {
+      // New format
+      return Quest(
+        id: json["id"],
+        title: json["title"],
+        description: json["description"],
+        type: QuestType.values.firstWhere((e) => e.name == json["type"]),
+        period: QuestPeriod.values.firstWhere((e) => e.name == json["period"]),
+        requirements: Map<String, dynamic>.from(json["requirements"] ?? {}),
+        coinReward: json["coinReward"],
+        foilReward: json["foilReward"] ?? false,
+        expiresAt: DateTime.parse(json["expiresAt"]),
+        progress: json["progress"] ?? 0,
+        target: json["target"],
+        completed: json["completed"] ?? false,
+        claimed: json["claimed"] ?? false,
+      );
+    } else {
+      // Old format (legacy)
+      return Quest(
         id: json["id"],
         title: json["title"],
         description: json["description"],
         category: json["category"],
         targetCount: json["targetCount"],
         targetGroup: json["targetGroup"],
-        safeForKids: json["safeForKids"],
+        safeForKids: json["safeForKids"] ?? false,
         rewardPoints: json["rewardPoints"],
         emoji: json["emoji"],
       );
+    }
+  }
+
+  Quest copyWith({
+    int? progress,
+    bool? completed,
+    bool? claimed,
+  }) {
+    return Quest(
+      id: id,
+      title: title,
+      description: description,
+      category: category,
+      targetCount: targetCount,
+      targetGroup: targetGroup,
+      safeForKids: safeForKids,
+      rewardPoints: rewardPoints,
+      emoji: emoji,
+      type: type,
+      period: period,
+      requirements: requirements,
+      coinReward: coinReward,
+      foilReward: foilReward,
+      expiresAt: expiresAt,
+      progress: progress ?? this.progress,
+      target: target,
+      completed: completed ?? this.completed,
+      claimed: claimed ?? this.claimed,
+    );
+  }
 }
 
 class QuestProgress {
@@ -113,53 +205,4 @@ class QuestProgress {
             ? DateTime.parse(json["completedAt"])
             : null,
       );
-        "type": type.name,
-        "period": period.name,
-        "requirements": requirements,
-        "coinReward": coinReward,
-        "foilReward": foilReward,
-        "expiresAt": expiresAt.toIso8601String(),
-        "progress": progress,
-        "target": target,
-        "completed": completed,
-        "claimed": claimed,
-      };
-
-  static Quest fromJson(Map<String, dynamic> m) => Quest(
-        id: m["id"],
-        title: m["title"],
-        description: m["description"],
-        type: QuestType.values.firstWhere((e) => e.name == m["type"]),
-        period: QuestPeriod.values.firstWhere((e) => e.name == m["period"]),
-        requirements: Map<String, dynamic>.from(m["requirements"] ?? {}),
-        coinReward: m["coinReward"],
-        foilReward: m["foilReward"] ?? false,
-        expiresAt: DateTime.parse(m["expiresAt"]),
-        progress: m["progress"] ?? 0,
-        target: m["target"],
-        completed: m["completed"] ?? false,
-        claimed: m["claimed"] ?? false,
-      );
-
-  Quest copyWith({
-    int? progress,
-    bool? completed,
-    bool? claimed,
-  }) {
-    return Quest(
-      id: id,
-      title: title,
-      description: description,
-      type: type,
-      period: period,
-      requirements: requirements,
-      coinReward: coinReward,
-      foilReward: foilReward,
-      expiresAt: expiresAt,
-      progress: progress ?? this.progress,
-      target: target,
-      completed: completed ?? this.completed,
-      claimed: claimed ?? this.claimed,
-    );
-  }
 }

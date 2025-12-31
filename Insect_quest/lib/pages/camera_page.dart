@@ -17,15 +17,9 @@ import '../services/firestore_service.dart';
 import '../services/user_service.dart';
 import '../widgets/camera_overlay.dart';
 import '../models/arthropod_card.dart';
-import '../services/ml_stub.dart';
-import '../services/catalog_service.dart';
-import '../services/settings_service.dart';
 import '../services/card_service.dart';
 import '../models/quest.dart';
 import '../models/achievement.dart';
-import '../services/ml_stub.dart';
-import '../services/catalog_service.dart';
-import '../services/settings_service.dart';
 import '../services/quest_service.dart';
 import '../widgets/pin_dialogs.dart';
 import '../services/streak_service.dart';
@@ -202,8 +196,8 @@ class _CameraPageState extends State<CameraPage> {
     // Genus-first identification
     final genusSuggestions = await identifier.identifyGenus(
       imagePath: file.path,
-      lat: lat,
-      lon: lon,
+      lat: preciseLatitude,
+      lon: preciseLongitude,
       kidsMode: kidsMode,
     );
 
@@ -215,12 +209,6 @@ class _CameraPageState extends State<CameraPage> {
       // User cancelled
       return;
     }
-    // Identification stub - pass kidsMode to filter species
-    final analysis = await ml.analyze(imagePath: file.path, lat: lat, lon: lon, kidsMode: kidsMode);
-    // Identification stub (uses precise location for better suggestions, but doesn't save it)
-    final analysis = await ml.analyze(imagePath: file.path, lat: preciseLatitude, lon: preciseLongitude);
-    final genus = analysis["genus"] as String;
-    final candidates = List<Map<String, dynamic>>.from(analysis["species_candidates"]);
 
     // Step 2: Allow user to optionally specify species or keep genus-only
     String genus = selectedGenus.genus;
@@ -285,6 +273,22 @@ class _CameraPageState extends State<CameraPage> {
       }
       
       if (showSafetyTip && mounted) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("🛡️ Safety Tip"),
+            content: Text(safetyMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Got it!"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+
     // Liveness verification for rare/legendary captures (optional)
     bool livenessVerified = false;
     if (LivenessService.isLivenessRequired(tier, enabled: Flags.livenessCheckEnabled)) {
@@ -315,25 +319,6 @@ class _CameraPageState extends State<CameraPage> {
       }
     }
 
-    // Task 9: Kids Mode - Show safety tips banner for spiders
-    if (kidsMode && group != null && (group == "Arachnids – Spiders" || group.toLowerCase().contains("spider"))) {
-      if (mounted) {
-        await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text("🛡️ Safety Tip"),
-            content: Text(safetyMessage),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Got it!"),
-              ),
-            ],
-          ),
-        );
-      }
-    }
-
     final pts = Scoring.points(
       tier: pointsTier,
       qualityMult: qMult,
@@ -347,26 +332,19 @@ class _CameraPageState extends State<CameraPage> {
       qualityMult: qMult,
     ).clamp(0, 10000); // Validate reasonable bounds (0-10k coins per capture)
 
-    debugPrint("Quality: s=$sharpness e=$exposure f=$framing qMult=$qMult");
-    debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
-    debugPrint("Points: $pts, Coins: $coinsAwarded");
     debugPrint("Quality: ${metrics.toString()} qMult=$qMult");
     debugPrint("Taxon: group=$group genus=$genus species=$species tier=$tier flags=$flags");
-    debugPrint("Points: $pts");
+    debugPrint("Points: $pts, Coins: $coinsAwarded");
     debugPrint("Anti-cheat: status=${validationResult['validationStatus']} hash=${validationResult['photoHash']} hasExif=${validationResult['hasExif']} liveness=$livenessVerified");
 
     final captureId = const Uuid().v4();
     final captureTimestamp = DateTime.now();
 
-    // Build capture
     // Build capture (only coarse geocell coordinates saved, not precise location)
     final cap = Capture(
       id: captureId,
       photoPath: file.path,
       timestamp: captureTimestamp,
-      lat: lat,
-      lon: lon,
-      timestamp: DateTime.now(),
       lat: coarseLat,  // Coarse coordinate from geocell
       lon: coarseLon,  // Coarse coordinate from geocell
       geocell: geocell,
@@ -400,6 +378,9 @@ class _CameraPageState extends State<CameraPage> {
 
     // Save capture and card
     await JournalPage.saveCapture(cap);
+    await CardService.saveCard(card);
+
+    debugPrint("Card minted: rarity=${card.rarity} foil=${card.foil} traits=${card.traits}");
 
     // Award coins and sync to Firestore
     try {
@@ -410,28 +391,12 @@ class _CameraPageState extends State<CameraPage> {
       debugPrint("Error syncing coins to Firestore: $e");
       // Continue even if Firestore sync fails (coins are still tracked locally)
     }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Saved capture (+$pts pts, +$coinsAwarded coins)")),
-      );
-    await CardService.saveCard(card);
-
-    debugPrint("Card minted: rarity=${card.rarity} foil=${card.foil} traits=${card.traits}");
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Saved capture (+$pts pts) • ${card.rarity} card minted!"),
-          duration: const Duration(seconds: 3),
-        ),
-      );
     
     // Check and update quest progress
     final completedQuests = await QuestService.updateProgressForCapture(cap, kidsMode);
     
     if (mounted) {
-      String message = "Saved capture (+$pts pts)";
+      String message = "Saved capture (+$pts pts, +$coinsAwarded coins) • ${card.rarity} card minted!";
       
       // Show quest completion notification with encouraging message
       if (completedQuests.isNotEmpty) {
@@ -651,6 +616,9 @@ class _CameraPageState extends State<CameraPage> {
           ],
         );
       },
+    );
+  }
+
   Future<void> _toggleKidsMode(bool newValue) async {
     // If turning OFF Kids Mode, require PIN verification
     if (!newValue && kidsMode) {
@@ -701,90 +669,7 @@ class _CameraPageState extends State<CameraPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
-    // Update quest progress
-    final completedQuests = await QuestService.updateQuestProgress(cap);
-    
-    // Update streak
-    final newStreak = await StreakService.updateStreak();
-    
-    // Check achievements
-    final captures = await JournalPage.loadCaptures();
-    final unlockedAchievements = await AchievementService.checkAchievements(captures, newStreak);
-    
-    if (mounted) {
-      String message = "Saved capture (+$pts pts)";
-      
-      // Add quest completion notifications
-      if (completedQuests.isNotEmpty) {
-        message += "\n🎯 Quest completed!";
-      }
-      
-      // Add streak notification
-      if (newStreak.currentStreak > 1) {
-        message += "\n🔥 ${newStreak.currentStreak} day streak!";
-      }
-      
-      // Add achievement notifications
-      if (unlockedAchievements.isNotEmpty) {
-        message += "\n🏆 Achievement unlocked!";
-      }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      
-      // Show detailed quest/achievement notifications
-      if (completedQuests.isNotEmpty || unlockedAchievements.isNotEmpty) {
-        _showRewardsDialog(completedQuests, unlockedAchievements);
-      }
     }
-  }
-  
-  void _showRewardsDialog(List<Quest> completedQuests, List<Achievement> achievements) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('🎉 Rewards!'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (completedQuests.isNotEmpty) ...[
-                const Text(
-                  'Quests Completed:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                ...completedQuests.map((q) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text('• ${q.title}'),
-                )),
-                const SizedBox(height: 8),
-              ],
-              if (achievements.isNotEmpty) ...[
-                const Text(
-                  'Achievements Unlocked:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                ...achievements.map((a) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text('• ${a.title}'),
-                )),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Awesome!'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

@@ -247,153 +247,16 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "${questProgress.currentCount}/${quest.targetCount} • ${quest.rewardPoints} pts",
+                      "${questProgress.currentCount}/${quest.targetCount!} • ${quest.rewardPoints} pts",
                       style: const TextStyle(fontSize: 12),
                     ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          children: [
-            // Profile Stats Card
-            Card(
-              margin: const EdgeInsets.all(12),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(
-                          Icons.photo_camera,
-                          'Captures',
-                          '${captures.length}',
-                        ),
-                        _buildStatItem(
-                          Icons.monetization_on,
-                          'Coins',
-                          '$coins',
-                          color: Colors.amber,
-                        ),
-                        GestureDetector(
-                          onTap: () => _showStreakDetails(),
-                          child: _buildStatItem(
-                            Icons.local_fire_department,
-                            'Streak',
-                            '${streak.currentStreak}',
-                            color: Colors.orange,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => _showAchievementsDialog(),
-                          child: _buildStatItem(
-                            Icons.emoji_events,
-                            'Achievements',
-                            '$unlockedAchievements/${achievements.length}',
-                            color: Colors.purple,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (streak.longestStreak > 0)
-                      Text(
-                        '🏆 Longest streak: ${streak.longestStreak} days',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
                   ],
                 ),
-              ),
-            ),
-            
-            // Captures Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.book),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Captures',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Captures List
-            ...captures.map((c) => Card(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: ListTile(
-                leading: Image.file(Uri.parse(c.photoPath).isAbsolute ? File(c.photoPath) : File(c.photoPath)),
-                title: Text(c.species ?? c.genus),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("${c.group} • ${c.tier}"),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, size: 14, color: Colors.blue),
-                        Text(" ${c.points} pts"),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.monetization_on, size: 14, color: Colors.amber),
-                        Text(" ${c.coins} coins"),
-                      ],
-                    ),
-                    Text(c.geocell, style: const TextStyle(fontSize: 11)),
-                    Text("${c.group} • ${c.tier} • ${c.points} pts • ${c.geocell}"),
-                    if (c.validationStatus == AntiCheatService.validationFlagged)
-                      const Text(
-                        "⚠️ Flagged",
-                        style: TextStyle(color: Colors.orange, fontSize: 12),
-                      ),
-                    if (c.livenessVerified)
-                      const Text(
-                        "✓ Liveness Verified",
-                        style: TextStyle(color: Colors.green, fontSize: 12),
-                      ),
-                  ],
-                ),
-                trailing: Wrap(
-                  spacing: 6,
-                  children: [
-                    if (c.flags["state_species"] == true)
-                      const Chip(label: Text("State Species"), avatar: Icon(Icons.star, size: 16)),
-                    if (c.flags["invasive"] == true)
-                      const Chip(label: Text("Invasive"), avatar: Icon(Icons.warning_amber_rounded, size: 16)),
-                    if (c.flags["venomous"] == true)
-                      const Chip(label: Text("Venomous"), avatar: Icon(Icons.health_and_safety, size: 16)),
-                    if (c.validationStatus == AntiCheatService.validationRejected)
-                      const Chip(label: Text("Rejected"), avatar: Icon(Icons.block, size: 16), backgroundColor: Colors.red),
-                  ],
-                ),
-                trailing: questProgress.completed
-                    ? const Icon(Icons.check_circle, color: Colors.green, size: 32)
-                    : null,
               ),
             );
           },
         );
       },
-            )),
-          ],
-        ),
-      ),
     );
   }
 
